@@ -12,8 +12,11 @@ $traverser = new PhpParser\NodeTraverser;
 $traverser->addVisitor(new VulnChecker\Visitor);
 
 /* パース */
+$lexer = new PhpParser\Lexer(array(
+  'usedAttributes' => array('startLine', 'startTokenPos')
+));
 $parser = (new PhpParser\ParserFactory)->create(
-                PhpParser\ParserFactory::PREFER_PHP5);
+                PhpParser\ParserFactory::PREFER_PHP5, $lexer);
 try {
   $code = file_get_contents($filename);
   $ast = $parser->parse($code);
