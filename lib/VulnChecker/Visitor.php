@@ -19,5 +19,10 @@ class Visitor extends NodeVisitorAbstract
         print " eval is called!";
       }
     }
+
+    /* 関数呼び出し */
+    if($node instanceof Node\Expr\FuncCall) {
+      var_dump($node->name->parts[0]);
+    }
   }
 }
