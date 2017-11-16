@@ -14,7 +14,7 @@ class TaintVariableRecord
   private $vars = array();
   private $parent;
 
-  public function __constructor($parent = NULL){
+  public function __construct($parent = NULL){
     $this->parent = $parent;
   }
 
@@ -26,7 +26,7 @@ class TaintVariableRecord
     if(isset($this->vars[$name])){
       return $this->vars[$name];
     } else if(isset($parent)) {
-      return $parent->get($name);
+      return $this->parent->get($name);
     }
   }
 
@@ -40,7 +40,7 @@ class TaintVariableRecord
       '_GET', '_SET', '_REQUEST', '_COOKIE', '_FILES', 'argv'
     );
     foreach($taint_vars as $v) {
-      $ret->set($v, TAINT_DIRTY);
+      $ret->set($v, TAINT_DITRY);
     }
     return $ret;
   }
