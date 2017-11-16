@@ -59,7 +59,7 @@ class TaintVisitor extends NodeVisitorAbstract
                 $node instanceof Expr\ShellExec){
         $tainted = TAINT_DIRTY;
       } else if($node instanceof Expr\FuncCall){
-        // TODO
+        $tainted = $this->analyzeFunctionCall($node);
       } else if($node instanceof Expr\Ternary){
         // 三項演算 : 両方チェック
         $tainted = max($node->if->getAttribute('taint'), 
@@ -105,7 +105,7 @@ class TaintVisitor extends NodeVisitorAbstract
     var_dump($this->variables);
   }
 
-  public function getVarName(Node $lvalue){
+  private function getVarName(Node $lvalue){
     if($lvalue instanceof Expr\Variable) {
       // Variable(v) => v
       return $lvalue->name;
@@ -115,6 +115,20 @@ class TaintVisitor extends NodeVisitorAbstract
     } else {
       // _ => null
       return NULL;
+    }
+  }
+
+  private function analyzeFunctionCall(Expr\FuncCall $node){
+    if($node->name instanceof Node\Name) {
+      $name = $node->name->toString();
+      if($name === 'escapeshellarg' || $name === 'escapeshellcmd'){
+        return TAINT_CLEAN;
+      } else {
+        // TODO
+        return TAINT_MAYBE;
+      }
+    } else if($node->name instanceof Expr) {
+      return $node->name->getAttribute('taint');
     }
   }
 }
