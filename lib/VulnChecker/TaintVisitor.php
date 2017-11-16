@@ -105,10 +105,12 @@ class TaintVisitor extends NodeVisitorAbstract
     }
   }
 
+  /*
   public function afterTraverse(array $nodes){
     var_dump($nodes);
     var_dump($this->variables);
   }
+  */
 
   private function getVarName(Node $lvalue){
     if($lvalue instanceof Expr\Variable) {
