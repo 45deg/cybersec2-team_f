@@ -32,7 +32,9 @@ class TaintVisitor extends NodeVisitorAbstract
       if($node instanceof Expr\ArrayDimFetch){
         // 配列アクセス
         $name = $this->getVarName($node);
-        $tainted = $this->variables->getOrElse($name, TAINT_MAYBE);
+        $top_name = explode('$', $name)[0];
+        $tainted = $this->variables->getOrElse($top_name
+                      ,$this->variables->getOrElse($name,TAINT_MAYBE));
       } else if($node instanceof Expr\ArrayItem) {
         $tainted = $node->value->getAttribute('taint');
       } else if($node instanceof Expr\Assign || 
@@ -40,7 +42,8 @@ class TaintVisitor extends NodeVisitorAbstract
                 $node instanceof Expr\AssignRef ){
         // 代入式
         $name = $this->getVarName($node->var);
-        if(isset($name)) {
+        // 変数名が取れる && ? が含まれていない場合 (配列アクセスに変数を用いていない場合)
+        if(isset($name) && strpos($name, '?') === FALSE) {
           $tainted = $node->expr->getAttribute('taint');
           if($node instanceof Expr\AssignOp) { // AssignOp の場合 変数自身の汚染も考慮
             $tainted = max($tainted, $this->variables->getOrElse($name, TAINT_MAYBE));
@@ -109,9 +112,17 @@ class TaintVisitor extends NodeVisitorAbstract
     if($lvalue instanceof Expr\Variable) {
       // Variable(v) => v
       return $lvalue->name;
-    } else if(isset($lvalue->var) && $lvalue->var instanceof Expr\Variable){
-      // ArrayDim(v, k) => v
-      return $lvalue->var->name;
+    } else if($lvalue instanceof Expr\ArrayDimFetch){
+      // ArrayDim(v, k) => (getVarName v):k
+      $var_name = $this->getVarName($lvalue->var);
+      if(is_null($var_name)) return NULL;
+      if($lvalue->dim instanceof Node\Scalar\String_ ||
+         $lvalue->dim instanceof Node\Scalar\LNumber ) {
+        $var_key = str_replace('$', '_DOLLAR_', $lvalue->dim->value);
+      } else {
+        $var_key = '?';
+      }
+      return $var_name . '$' . $var_key;
     } else {
       // _ => null
       return NULL;
