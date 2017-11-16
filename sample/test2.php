@@ -37,3 +37,29 @@ print '[system]' . '<br>';
 system('echo ' . $code);
 
 print '<hr>';
+
+print '[system2]' . '<br>';
+
+$name = "system";
+$name("echo " . $code); 
+// \Node\Expr\FuncCall
+// $node->name が \Node\Expr\Variable
+
+print '<hr>';
+
+print '[system3]' . '<br>';
+
+$name = ["system"];
+$name[0]("echo " . $code); 
+// \Node\Expr\FuncCall
+// $node->name が \Node\Expr\ArrayDimFetch
+
+print '<hr>';
+
+class Hoge {
+  public function f1() { 
+    return "system";
+  }
+}
+$hoge = new Hoge;
+//((string)$hoge->f1())("echo " . $code);
