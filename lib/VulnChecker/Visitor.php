@@ -37,6 +37,7 @@ class Visitor extends NodeVisitorAbstract
 
   }
 
+  // TODO: exec系とeval系で安全な引数かどうか判断基準が変わりそうなので、分けたほうが良さそう
   private $execFunc = array(
     // exec系
     "exec",

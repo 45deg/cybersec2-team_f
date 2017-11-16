@@ -4,7 +4,7 @@
 
 $code = $_GET['code'];
 
-/* vuln: localhost:8080/test2.php?code=hello;%20ls */
+/* vuln: localhost:8080/test2.php?code=hello;%20ls&ev=shell_exec(%22ls%22); */
 
 /* http://php.net/manual/ja/ref.exec.php */
 print '[exec]' . '<br>';
