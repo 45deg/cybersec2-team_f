@@ -12,13 +12,26 @@ const TAINT_CLEAN = 0;
 class TaintVariableRecord
 {
   private $vars = array();
+  private $parent;
+
+  public function __constructor($parent = NULL){
+    $this->parent = $parent;
+  }
 
   public function set($name, $type){
     $this->vars[$name] = $type;
   }
 
   public function get($name, $type){
-    return $this->vars[$name];
+    if(isset($this->vars[$name])){
+      return $this->vars[$name];
+    } else if(isset($parent)) {
+      return $parent->get($name);
+    }
+  }
+
+  public function getParent(){
+    return $this->parent;
   }
 
   public static function createGlobalRecord(){
