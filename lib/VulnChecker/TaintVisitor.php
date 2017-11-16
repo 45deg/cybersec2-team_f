@@ -26,30 +26,34 @@ class TaintVisitor extends NodeVisitorAbstract
     if($node instanceof Node\FunctionLike){
       // discard scope
       $this->variables = $this->variables->getParent();
-    } else if ($node instanceof Expr\Assign){
-      // 代入式
-      $name = $this->getVarName($node->var);
-      if(isset($name)) {
-        $tainted = $node->expr->getAttribute('taint');
-        if(!isset($tainted)) $tainted = TAINT_MAYBE;
-        $this->variables->set($name, $tainted);
-        $node->setAttribute('taint', $tainted); // propergate
-      } else {
-        $node->setAttribute('taint', TAINT_MAYBE); // propergate
-      }
-    } else if($node instanceof Node\Scalar) {
-      // スカラー値
-      if($node instanceof Node\Scalar\Encapsed) {
-        // 変数展開 : propagate
-        $taint = TAINT_CLEAN;
-        foreach($node->parts as $part){
-          $taint = max($part->getAttribute('taint'), $taint);
+    } else if($node instanceof Expr) {
+      $tainted = TAINT_MAYBE; // Expr のデフォルト汚染レベル: MAYBE
+
+      if($node instanceof Expr\Assign || $node instanceof Expr\AssignOp){
+        // 代入式
+        $name = $this->getVarName($node->var);
+        if(isset($name)) {
+          $tainted = $node->expr->getAttribute('taint');
+          if($node instanceof Expr\AssignOp) { // AssignOp の場合 変数自身の汚染も考慮
+            $vt = $this->variables->get($name);
+            $tainted = max($tainted, isset($vt) ? $vt : TAINT_MAYBE);
+          }
+          $this->variables->set($name, $tainted);
         }
-        $node->setAttribute('taint', $taint);
-      } else {
-        // それ以外(文字列、数値等) : CLEAN
-        $node->setAttribute('taint', TAINT_CLEAN);
-      } 
+      } else if($node instanceof Node\Scalar) {
+        // スカラー値
+        if($node instanceof Node\Scalar\Encapsed) {
+          // 変数展開 : propagate
+          $tainted = TAINT_CLEAN;
+          foreach($node->parts as $part){
+            $tainted = max($part->getAttribute('taint'), $tainted);
+          }
+        } else {
+          $tainted = TAINT_CLEAN;
+        } 
+      }
+
+      $node->setAttribute('taint', $tainted);
     }
   }
 
