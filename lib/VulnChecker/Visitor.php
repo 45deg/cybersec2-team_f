@@ -38,10 +38,17 @@ class Visitor extends NodeVisitorAbstract
   }
 
   private $execFunc = array(
+    // exec系
     "exec",
     "shell_exec",
     "passthru",
-    "system"
+    "system",
+    "popen",
+    "pcntl_exec",
+    "proc_open",
+    // eval系
+    "preg_replace",
+    "create_function"
   );
 
   private function checkFuncCall(Node $node) {

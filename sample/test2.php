@@ -72,3 +72,59 @@ $hoge = new Hoge;
 print '[Backtick]' . '<br>';
 print `echo $code`;
 
+print '<hr>';
+
+// ; でコマンドつなげても無理っぽい
+print '[popen]' . '<br>';
+
+$handle = popen("echo " . $code, "r");
+$read = fread($handle, 2096);
+echo $read;
+pclose($handle);
+
+print '<hr>';
+
+print '[proc_open]' . '<br>';
+
+$descriptorspec = array(
+  0 => array("pipe", "r"),
+  1 => array("pipe", "w"),
+  2 => array("pipe", "w")
+);
+
+$process = proc_open('echo ' . $code, $descriptorspec, $pipes);
+if (is_resource($process)) {
+  fclose($pipes[0]);
+
+  echo stream_get_contents($pipes[1]);
+  fclose($pipes[1]);
+  echo stream_get_contents($pipes[2]);
+  fclose($pipes[2]);
+  
+  $return_value = proc_close($process);
+  //echo "command returned $return_value\n";
+}
+
+print '<hr>';
+
+// require: -enable-pcntl
+// これも ; でコマンドつなげてもダメっぽい
+//print '[pcntl_exec]' . '<br>';
+//pcntl_exec('ls', array($code));
+//
+//print '<hr>';
+
+
+$ev = $_GET['ev'];
+
+print '[preg_replace]' . '<br>';
+print preg_replace('/(.*)/e', $ev, '');
+
+print '<hr>';
+
+print '[create_function]' . '<br>';
+
+$f = create_function('', "return $ev");
+print $f();
+
+print '<hr>';
