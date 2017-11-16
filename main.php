@@ -9,6 +9,7 @@ $filename = $argv[1];
 if(!isset($filename)) die('Input a file.');
 
 $traverser = new PhpParser\NodeTraverser;
+$traverser->addVisitor(new VulnChecker\TaintVisitor);
 $traverser->addVisitor(new VulnChecker\Visitor);
 
 /* パース */
