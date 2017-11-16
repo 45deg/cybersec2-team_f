@@ -35,11 +35,12 @@ class TaintVisitor extends NodeVisitorAbstract
         if(isset($name)) {
           $tainted = $node->expr->getAttribute('taint');
           if($node instanceof Expr\AssignOp) { // AssignOp の場合 変数自身の汚染も考慮
-            $vt = $this->variables->get($name);
-            $tainted = max($tainted, isset($vt) ? $vt : TAINT_MAYBE);
+            $tainted = max($tainted, $this->variables->getOrElse($name, TAINT_MAYBE));
           }
           $this->variables->set($name, $tainted);
         }
+      } else if($node instanceof Expr\Variable){
+        $tainted = $this->variables->getOrElse($node->name, TAINT_MAYBE);
       } else if($node instanceof Node\Scalar) {
         // スカラー値
         if($node instanceof Node\Scalar\Encapsed) {

@@ -22,12 +22,17 @@ class TaintVariableRecord
     $this->vars[$name] = $type;
   }
 
-  public function get($name, $type){
+  public function get($name){
     if(isset($this->vars[$name])){
       return $this->vars[$name];
     } else if(isset($parent)) {
       return $this->parent->get($name);
     }
+  }
+
+  public function getOrElse($name, $default){
+    $v = $this->get($name);
+    return isset($v) ? $v : $default;
   }
 
   public function getParent(){
