@@ -27,19 +27,34 @@ class TaintVisitor extends NodeVisitorAbstract
       // discard scope
       $this->variables = $this->variables->getParent();
     } else if ($node instanceof Expr\Assign){
+      // 代入式
       $name = $this->getVarName($node->var);
       if(isset($name)) {
         $tainted = $node->expr->getAttribute('taint');
         if(!isset($tainted)) $tainted = TAINT_MAYBE;
         $this->variables->set($name, $tainted);
-        $node->expr->setAttribute('taint', $tainted); // propergate
+        $node->setAttribute('taint', $tainted); // propergate
       } else {
         $node->setAttribute('taint', TAINT_MAYBE); // propergate
       }
+    } else if($node instanceof Node\Scalar) {
+      // スカラー値
+      if($node instanceof Node\Scalar\Encapsed) {
+        // 変数展開 : propagate
+        $taint = TAINT_CLEAN;
+        foreach($node->parts as $part){
+          $taint = max($part->getAttribute('taint'), $taint);
+        }
+        $node->setAttribute('taint', $taint);
+      } else {
+        // それ以外(文字列、数値等) : CLEAN
+        $node->setAttribute('taint', TAINT_CLEAN);
+      } 
     }
   }
 
   public function afterTraverse(array $nodes){
+    var_dump($nodes);
     var_dump($this->variables);
   }
 
