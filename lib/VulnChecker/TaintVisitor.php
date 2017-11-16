@@ -29,7 +29,15 @@ class TaintVisitor extends NodeVisitorAbstract
     } else if($node instanceof Expr) {
       $tainted = TAINT_MAYBE; // Expr のデフォルト汚染レベル: MAYBE
 
-      if($node instanceof Expr\Assign || $node instanceof Expr\AssignOp){
+      if($node instanceof Expr\ArrayDimFetch){
+        // 配列アクセス
+        $name = $this->getVarName($node);
+        $tainted = $this->variables->getOrElse($name, TAINT_MAYBE);
+      } else if($node instanceof Expr\ArrayItem) {
+        $tainted = $node->value->getAttribute('taint');
+      } else if($node instanceof Expr\Assign || 
+                $node instanceof Expr\AssignOp ||
+                $node instanceof Expr\AssignRef ){
         // 代入式
         $name = $this->getVarName($node->var);
         if(isset($name)) {
@@ -39,6 +47,23 @@ class TaintVisitor extends NodeVisitorAbstract
           }
           $this->variables->set($name, $tainted);
         }
+      } else if($node instanceof Expr\BinaryOp){
+        // 二項演算 : 両方チェック
+        $tainted = max($node->left->getAttribute('taint'), 
+                       $node->right->getAttribute('taint'));
+      } else if($node instanceof Expr\Cast || 
+                $node instanceof Expr\Clone_ ||
+                $node instanceof Expr\ErrorSuppress){
+        $tainted = $node->expr->getAttribute('taint');
+      } else if($node instanceof Expr\Eval_ || 
+                $node instanceof Expr\ShellExec){
+        $tainted = TAINT_DIRTY;
+      } else if($node instanceof Expr\FuncCall){
+        // TODO
+      } else if($node instanceof Expr\Ternary){
+        // 三項演算 : 両方チェック
+        $tainted = max($node->if->getAttribute('taint'), 
+                       $node->else->getAttribute('taint'));
       } else if($node instanceof Expr\Variable){
         $tainted = $this->variables->getOrElse($node->name, TAINT_MAYBE);
       } else if($node instanceof Node\Scalar) {
@@ -53,6 +78,23 @@ class TaintVisitor extends NodeVisitorAbstract
           $tainted = TAINT_CLEAN;
         } 
       }
+
+      // おそらく安全だと思われるもの
+      else if( $node instanceof Expr\BitwiseNot || $node instanceof Expr\BooleanNot
+            || $node instanceof Expr\Closure || $node instanceof Expr\Empty_
+            || $node instanceof Expr\Exit_ || $node instanceof Expr\Instanceof_
+            || $node instanceof Expr\Isset_ || $node instanceof Expr\New_
+            || $node instanceof Expr\PostInc || $node instanceof Expr\PostDec
+            || $node instanceof Expr\PreInc || $node instanceof Expr\PreDec 
+            || $node instanceof Expr\Print_ || $node instanceof Expr\UnaryMinus
+            || $node instanceof Expr\UnaryPlus ) {
+        $tainted = TAINT_CLEAN;
+      }
+
+      /* 定数の扱いについてはTODO → 今は全部 MAYBE 
+         他の保留: Array_, List_, MethodCall, PropertyFetch, 
+                  StaticCall, StaticPropertyFetch, Yield*
+      */
 
       $node->setAttribute('taint', $tainted);
     }
