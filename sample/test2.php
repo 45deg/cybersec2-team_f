@@ -18,11 +18,13 @@ print shell_exec('echo ' . $code);
 
 print '<hr>';
 
+// これは検出したくない
 print '[shell_exec with escapeshellarg]' . '<br>';
 print shell_exec('echo ' . escapeshellarg($code));
 
 print '<hr>';
 
+// これは検出したくない
 print '[shell_exec with escapeshellcmd]' . '<br>';
 print shell_exec(escapeshellcmd("echo $code"));
 
@@ -38,6 +40,7 @@ system('echo ' . $code);
 
 print '<hr>';
 
+/*
 print '[system2]' . '<br>';
 
 $name = "system";
@@ -63,3 +66,9 @@ class Hoge {
 }
 $hoge = new Hoge;
 //((string)$hoge->f1())("echo " . $code);
+*/
+
+
+print '[Backtick]' . '<br>';
+print `echo $code`;
+

@@ -25,6 +25,14 @@ class Visitor extends NodeVisitorAbstract
     else if($node instanceof Node\Expr\FuncCall) {
       $this->checkFuncCall($node);
     }
+    /* Backtick */
+    else if($node instanceof Node\Expr\ShellExec) {
+      //$node->parts;
+      //var_dump($node);
+      print "[{$node->getAttribute('startLine')}:{$node->getAttribute('startTokenPos')}]";
+      print " Backtick is used!";
+      print "\n";
+    }
 
 
   }
