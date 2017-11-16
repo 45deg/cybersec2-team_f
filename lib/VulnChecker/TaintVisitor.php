@@ -45,9 +45,11 @@ class TaintVisitor extends NodeVisitorAbstract
         // 変数名が取れる && ? が含まれていない場合 (配列アクセスに変数を用いていない場合)
         if(isset($name) && strpos($name, '?') === FALSE) {
           $tainted = $node->expr->getAttribute('taint');
-          if($node instanceof Expr\AssignOp) { // AssignOp の場合 変数自身の汚染も考慮
-            $tainted = max($tainted, $this->variables->getOrElse($name, TAINT_MAYBE));
-          }
+          // すでに変数が定義されている場合は汚染を伝播させる
+          // TODO: この場合 $a = $_GET['po']; $a = 1; のような変数の再代入に対応できない。
+          // なお、演算代入の場合はデフォルトが MAYBE 
+          $tainted = max($tainted, $this->variables->getOrElse($name, 
+                  ($node instanceof Expr\AssignOp) ? TAINT_MAYBE : TAINT_CLEAN));
           $this->variables->set($name, $tainted);
         }
       } else if($node instanceof Expr\BinaryOp){
