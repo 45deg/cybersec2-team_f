@@ -6,7 +6,9 @@ namespace VulnChecker;
 const TAINT_DITRY = 20;
 // MAYBE 外部関数呼び出しの返り値や解決できない変数などを用いている
 const TAINT_MAYBE = 10; 
-// CLEAN 文字列リテラル あるいは shellescape などを施している
+// CLEAN_ESACPE shellescape を施している
+const TAINT_ESCAPE_CLEAN = 1;
+// CLEAN 文字列リテラル等
 const TAINT_CLEAN = 0;
 
 class TaintVariableRecord

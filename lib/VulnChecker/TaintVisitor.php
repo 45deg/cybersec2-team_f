@@ -137,7 +137,7 @@ class TaintVisitor extends NodeVisitorAbstract
     if($node->name instanceof Node\Name) {
       $name = $node->name->toString();
       if($name === 'escapeshellarg' || $name === 'escapeshellcmd'){
-        return TAINT_CLEAN;
+        return TAINT_ESCAPE_CLEAN;
       } else {
         // TODO
         return TAINT_MAYBE;
