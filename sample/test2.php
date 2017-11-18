@@ -128,3 +128,14 @@ $f = create_function('', "return $ev");
 print $f();
 
 print '<hr>';
+
+$file = $_GET['file'];
+
+print '[require / include]' . '<br>';
+
+require($file);
+require_once($file);
+include($file);
+include_once($file);
+
+print '<hr>';

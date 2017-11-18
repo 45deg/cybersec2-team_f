@@ -21,6 +21,17 @@ class Visitor extends NodeVisitorAbstract
         print "\n";
       }
     }
+    /* require / include * */
+    if($node instanceof Node\Expr\Include_) {
+      // TODO: 引数 ($node->expr) が安全 (定数やサニタイズ済) だった場合はOKにする。
+      $is_safe = false;
+      if(!$is_safe) {
+        // TODO: 警告機構をモジュール化する
+        print "[{$node->getAttribute('startLine')}:{$node->getAttribute('startTokenPos')}]";
+        print " include or require is called!";
+        print "\n";
+      }
+    }
     /* 関数呼び出し */
     else if($node instanceof Node\Expr\FuncCall) {
       $this->checkFuncCall($node);
