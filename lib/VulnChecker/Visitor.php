@@ -13,14 +13,14 @@ class Visitor extends NodeVisitorAbstract
     /* eval の場合 */
     if($node instanceof Node\Expr\Eval_) {
       $tainted = $this->getTainted($node->expr);
-      if($tainted > TAINT_ESCAPE_CLEAN) {
+      if($tainted > TAINT_CLEAN) {
         $this->notice($node, "eval is called!", $tainted);
       }
     }
     /* require / include * */
     if($node instanceof Node\Expr\Include_) {
       $tainted = $this->getTainted($node->expr);
-      if($tainted > TAINT_ESCAPE_CLEAN) {
+      if($tainted > TAINT_CLEAN) {
         $this->notice($node, "include or require is called!", $tainted);
       }
     }
@@ -96,7 +96,7 @@ class Visitor extends NodeVisitorAbstract
       } else if(array_key_exists($funcName, $this->evalFunc)) {
         // TODO: preg_replace eオプションの考慮
         $tainted = $this->getArgumentsTainted($node->args, $this->evalFunc[$funcName]);  
-        if($tainted > TAINT_ESCAPE_CLEAN) {
+        if($tainted > TAINT_CLEAN) {
           $this->notice($node, "$funcName (eval) is called!", $tainted);
         }
       }
