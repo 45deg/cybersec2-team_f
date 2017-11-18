@@ -12,24 +12,16 @@ class Visitor extends NodeVisitorAbstract
   public function leaveNode(Node $node) {
     /* eval の場合 */
     if($node instanceof Node\Expr\Eval_) {
-      // TODO: 引数 ($node->expr) が安全 (定数やサニタイズ済) だった場合はOKにする。
-      $is_safe = false;
-      if(!$is_safe) {
-        // TODO: 警告機構をモジュール化する
-        print "[{$node->getAttribute('startLine')}:{$node->getAttribute('startTokenPos')}]";
-        print " eval is called!";
-        print "\n";
+      $tainted = $this->getTainted($node->expr);
+      if($tainted > TAINT_CLEAN) {
+        $this->notice($node, "eval is called!", $tainted);
       }
     }
     /* require / include * */
     if($node instanceof Node\Expr\Include_) {
-      // TODO: 引数 ($node->expr) が安全 (定数やサニタイズ済) だった場合はOKにする。
-      $is_safe = false;
-      if(!$is_safe) {
-        // TODO: 警告機構をモジュール化する
-        print "[{$node->getAttribute('startLine')}:{$node->getAttribute('startTokenPos')}]";
-        print " include or require is called!";
-        print "\n";
+      $tainted = $this->getTainted($node->expr);
+      if($tainted > TAINT_CLEAN) {
+        $this->notice($node, "include or require is called!", $tainted);
       }
     }
     /* 関数呼び出し */
@@ -38,46 +30,75 @@ class Visitor extends NodeVisitorAbstract
     }
     /* Backtick */
     else if($node instanceof Node\Expr\ShellExec) {
-      //$node->parts;
-      //var_dump($node);
-      print "[{$node->getAttribute('startLine')}:{$node->getAttribute('startTokenPos')}]";
-      print " Backtick is used!";
-      print "\n";
+      $tainted = $this->getArrayTainted($node->parts);
+      if($tainted > TAINT_ESCAPE_CLEAN) {
+        $this->notice($node, "Backtick is used!", $tainted);
+      }
     }
 
   }
 
-
   private $execFunc = array(
-    "exec",
-    "shell_exec",
-    "passthru",
-    "system",
-    "popen",
-    "pcntl_exec",
-    "proc_open"
+    "exec"        => array(0), // 確認する引数のインデックス
+    "shell_exec"  => array(0),
+    "passthru"    => array(0),
+    "system"      => array(0),
+    "popen"       => array(0),      
+    "pcntl_exec"  => array(0, 1),
+    "proc_open"   => array(0)
   );
 
   private $evalFunc = array(
-    "preg_replace",   // eオプションのみ
-    "create_function"
+    "preg_replace"    => array(1), // 0番目がeのときのみ
+    "create_function" => array(1)
   );
+
+  // TODO: もうちょっとまともに
+  private function notice(Node $node, $message, $level) {
+    print "[{$node->getAttribute('startLine')}:{$node->getAttribute('startTokenPos')}]";
+    print "<$level> $message";
+    print "\n";
+  }
+
+  private function getTainted(Node $node) {
+    $tainted = $node->getAttribute('taint');
+    return is_null($tainted) ? TAINT_CLEAN : $tainted;
+  }
+
+  private function getArgumentsTainted(array $args, array $indices) {
+    $func = function($index) use($indices) {
+      return in_array($index, $indices);
+    };
+    $func2 = function($arg) {
+      return $arg->value;
+    };
+    $arr = array_filter($args, $func, ARRAY_FILTER_USE_KEY);
+    $arr2 = array_map($func2, $arr);
+    return $this->getArrayTainted($arr2);
+  }
+
+  private function getArrayTainted(array $arr) {
+    $func = function($node) {
+      return $this->getTainted($node);
+    };
+    return max(array_map($func, $arr));
+  }
 
   private function checkFuncCall(Node $node) {
     $name = $node->name;
     if($name instanceof Node\Name) {
       $funcName = $name->parts[0];
-      if(in_array($funcName, $this->execFunc)) {
-        // TODO: 引数の解析
-        print "[{$node->getAttribute('startLine')}:{$node->getAttribute('startTokenPos')}]";
-        print " {$funcName} is called!";
-        print "\n";
-      } else if(in_array($funcName, $this->evalFunc)) {
-        // TODO: 引数の解析
-        print "[{$node->getAttribute('startLine')}:{$node->getAttribute('startTokenPos')}]";
-        print " {$funcName} (eval) is called!";
-        print "\n";
-        
+      if(array_key_exists($funcName, $this->execFunc)) {
+        $tainted = $this->getArgumentsTainted($node->args, $this->execFunc[$funcName]);  
+        if($tainted > TAINT_ESCAPE_CLEAN) {
+          $this->notice($node, "$funcName is called!", $tainted);
+        }
+      } else if(array_key_exists($funcName, $this->evalFunc)) {
+        // TODO: preg_replace eオプションの考慮
+        $tainted = $this->getArgumentsTainted($node->args, $this->evalFunc[$funcName]);  
+        if($tainted > TAINT_CLEAN) {
+          $this->notice($node, "$funcName (eval) is called!", $tainted);
+        }
       }
     } 
     else if($name instanceof Node\Expr\Variable) {
