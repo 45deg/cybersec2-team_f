@@ -126,8 +126,8 @@ print '[preg_replace]' . '<br>';
 print preg_replace('/(.*)/e', $ev, '');
 
 // ok
-print preg_replace('/(.*)/i', $ev, '');
-print preg_replace("/{$ev}/g", 'hoge', '');
+preg_replace('/(.*)/i', $ev, '');
+preg_replace("/{$ev}/i", 'hoge', '');
 
 print '<hr>';
 
