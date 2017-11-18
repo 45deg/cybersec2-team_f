@@ -43,35 +43,6 @@ system('echo ' . $code);
 
 print '<hr>';
 
-/*
-print '[system2]' . '<br>';
-
-$name = "system";
-$name("echo " . $code); 
-// \Node\Expr\FuncCall
-// $node->name が \Node\Expr\Variable
-
-print '<hr>';
-
-print '[system3]' . '<br>';
-
-$name = ["system"];
-$name[0]("echo " . $code); 
-// \Node\Expr\FuncCall
-// $node->name が \Node\Expr\ArrayDimFetch
-
-print '<hr>';
-
-class Hoge {
-  public function f1() { 
-    return "system";
-  }
-}
-$hoge = new Hoge;
-//((string)$hoge->f1())("echo " . $code);
-*/
-
-
 print '[Backtick]' . '<br>';
 print `echo $code`;
 //　汚染されていない
@@ -116,7 +87,7 @@ print '<hr>';
 // これも ; でコマンドつなげてもダメっぽい
 //print '[pcntl_exec]' . '<br>';
 //pcntl_exec('ls', array($code));
-//
+
 //print '<hr>';
 
 
@@ -140,13 +111,24 @@ print '<hr>';
 
 $file = $_GET['file'];
 
+print '[FunctionCall]' . '<br>';
+$nya = $_GET['nya'];
+$nyao = $_GET['nyao'];
+print $nya($nyao);
+
+print '<hr>';
+
+print '[FunctionCall2]' . '<br>';
+$pao = array($_GET['nya'], $_GET['nyao']);
+print $pao[0]($pao[1]);
+
+print '<hr>';
 print '[require / include]' . '<br>';
 
 require($file);
 require_once($file);
 include($file);
 include_once($file);
-require("test1.php");
 
 print '<hr>';
 
