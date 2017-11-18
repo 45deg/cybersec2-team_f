@@ -11,6 +11,9 @@ print '[exec]' . '<br>';
 exec("echo ${code}", $output);
 print implode(' ', $output);
 
+// 汚染されていない
+exec("echo hello world", $temp);
+
 print '<hr>';
 
 print '[shell_exec]' . '<br>';
@@ -71,6 +74,8 @@ $hoge = new Hoge;
 
 print '[Backtick]' . '<br>';
 print `echo $code`;
+//　汚染されていない
+print `echo hello`;
 
 print '<hr>';
 
@@ -137,6 +142,7 @@ require($file);
 require_once($file);
 include($file);
 include_once($file);
+require("test1.php");
 
 print '<hr>';
 
