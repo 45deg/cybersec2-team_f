@@ -125,6 +125,10 @@ $ev = $_GET['ev'];
 print '[preg_replace]' . '<br>';
 print preg_replace('/(.*)/e', $ev, '');
 
+// ok
+print preg_replace('/(.*)/i', $ev, '');
+print preg_replace("/{$ev}/g", 'hoge', '');
+
 print '<hr>';
 
 print '[create_function]' . '<br>';

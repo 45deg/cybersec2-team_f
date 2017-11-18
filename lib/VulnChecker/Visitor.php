@@ -30,7 +30,7 @@ class Visitor extends NodeVisitorAbstract
     }
     /* Backtick */
     else if($node instanceof Node\Expr\ShellExec) {
-      $tainted = $this->getPartsTainted($node->parts);
+      $tainted = $this->getArrayTainted($node->parts);
       if($tainted > TAINT_ESCAPE_CLEAN) {
         $this->notice($node, "Backtick is used!", $tainted);
       }
@@ -39,18 +39,18 @@ class Visitor extends NodeVisitorAbstract
   }
 
   private $execFunc = array(
-    "exec",       // 確認する引数: 1番目
-    "shell_exec", // 1
-    "passthru",   // 1
-    "system",     // 1
-    "popen",      // 1
-    "pcntl_exec", // 1, 2
-    "proc_open"   // 1
+    "exec"        => array(0), // 確認する引数のインデックス
+    "shell_exec"  => array(0),
+    "passthru"    => array(0),
+    "system"      => array(0),
+    "popen"       => array(0),      
+    "pcntl_exec"  => array(0, 1),
+    "proc_open"   => array(0)
   );
 
   private $evalFunc = array(
-    "preg_replace",   // 確認する引数: 2番目 (1番目がeのときのみ)
-    "create_function" // 2
+    "preg_replace"    => array(1), // 0番目がeのときのみ
+    "create_function" => array(1)
   );
 
   // TODO: もうちょっとまともに
@@ -65,27 +65,37 @@ class Visitor extends NodeVisitorAbstract
     return is_null($tainted) ? TAINT_CLEAN : $tainted;
   }
 
-  private function getPartsTainted(array $parts) {
+  private function getArgumentsTainted(array $args, array $indices) {
+    $func = function($index) use($indices) {
+      return in_array($index, $indices);
+    };
+    $func2 = function($arg) {
+      return $arg->value;
+    };
+    $arr = array_filter($args, $func, ARRAY_FILTER_USE_KEY);
+    $arr2 = array_map($func2, $arr);
+    return $this->getArrayTainted($arr2);
+  }
+
+  private function getArrayTainted(array $arr) {
     $func = function($node) {
       return $this->getTainted($node);
     };
-    return max(array_map($func, $parts));
+    return max(array_map($func, $arr));
   }
 
   private function checkFuncCall(Node $node) {
     $name = $node->name;
     if($name instanceof Node\Name) {
       $funcName = $name->parts[0];
-      // 何番目の引数を見るかは関数によって変わるかも
-      // とりあえず1番目
-      $tainted = $this->getTainted($node->args[0]->value);
-      
-      if(in_array($funcName, $this->execFunc)) {
-        // 引数解析
+      if(array_key_exists($funcName, $this->execFunc)) {
+        $tainted = $this->getArgumentsTainted($node->args, $this->execFunc[$funcName]);  
         if($tainted > TAINT_ESCAPE_CLEAN) {
           $this->notice($node, "$funcName is called!", $tainted);
         }
-      } else if(in_array($funcName, $this->evalFunc)) {
+      } else if(array_key_exists($funcName, $this->evalFunc)) {
+        // TODO: preg_replace eオプションの考慮
+        $tainted = $this->getArgumentsTainted($node->args, $this->evalFunc[$funcName]);  
         if($tainted > TAINT_ESCAPE_CLEAN) {
           $this->notice($node, "$funcName (eval) is called!", $tainted);
         }
