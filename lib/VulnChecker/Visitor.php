@@ -45,21 +45,21 @@ class Visitor extends NodeVisitorAbstract
       print "\n";
     }
 
-
   }
 
-  // TODO: exec系とeval系で安全な引数かどうか判断基準が変わりそうなので、分けたほうが良さそう
+
   private $execFunc = array(
-    // exec系
     "exec",
     "shell_exec",
     "passthru",
     "system",
     "popen",
     "pcntl_exec",
-    "proc_open",
-    // eval系
-    "preg_replace",
+    "proc_open"
+  );
+
+  private $evalFunc = array(
+    "preg_replace",   // eオプションのみ
     "create_function"
   );
 
@@ -72,6 +72,12 @@ class Visitor extends NodeVisitorAbstract
         print "[{$node->getAttribute('startLine')}:{$node->getAttribute('startTokenPos')}]";
         print " {$funcName} is called!";
         print "\n";
+      } else if(in_array($funcName, $this->evalFunc)) {
+        // TODO: 引数の解析
+        print "[{$node->getAttribute('startLine')}:{$node->getAttribute('startTokenPos')}]";
+        print " {$funcName} (eval) is called!";
+        print "\n";
+        
       }
     } 
     else if($name instanceof Node\Expr\Variable) {
