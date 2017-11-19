@@ -18,14 +18,14 @@ class TaintVisitor extends NodeVisitorAbstract
   public function enterNode(Node $node){
     if($node instanceof Node\FunctionLike){
       // create scope
-      $this->variables = new TaintVariableRecord($this->variables);
+      $this->variables = $this->variables->createScope();
     }
   }
 
   public function leaveNode(Node $node) {
     if($node instanceof Node\FunctionLike){
       // discard scope
-      $this->variables = $this->variables->getParent();
+      $this->variables = $this->variables->discardScope();
     } else if($node instanceof Expr) {
       $tainted = TAINT_MAYBE; // Expr のデフォルト汚染レベル: MAYBE
 

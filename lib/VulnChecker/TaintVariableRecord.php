@@ -37,10 +37,6 @@ class TaintVariableRecord
     return isset($v) ? $v : $default;
   }
 
-  public function getParent(){
-    return $this->parent;
-  }
-
   public static function createGlobalRecord(){
     $ret = new TaintVariableRecord();
     $taint_vars =  array(
@@ -50,5 +46,13 @@ class TaintVariableRecord
       $ret->set($v, TAINT_DITRY);
     }
     return $ret;
+  }
+
+  public function createScope(){
+    return new TaintVariableRecord($this);
+  }
+
+  public function discardScope(){
+    return $this->parent;
   }
 }
