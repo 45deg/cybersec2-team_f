@@ -13,16 +13,12 @@ const TAINT_CLEAN = 0;
 
 class TaintVariableRecord
 {
-  private $vars = array();
-  private $parent;
+  protected $vars = array();
+  protected $functions = array();
 
   const TAINTED_SUPER_GLOBALS = array(
     '_GET', '_SET', '_REQUEST', '_COOKIE', '_FILES', 'argv'
   );
-
-  public function __construct($parent = NULL){
-    $this->parent = $parent;
-  }
 
   public function set($name, $type){
     $this->vars[$name] = $type;
@@ -31,12 +27,10 @@ class TaintVariableRecord
   public function get($name){
     if(in_array($name, self::TAINTED_SUPER_GLOBALS)) {
       return TAINT_DITRY;
-    }
-
-    if(isset($this->vars[$name])){
+    } else if(isset($this->vars[$name])){
       return $this->vars[$name];
-    } else if(isset($parent)) {
-      return $this->parent->get($name);
+    } else {
+      return NULL;
     }
   }
 
@@ -46,10 +40,6 @@ class TaintVariableRecord
   }
 
   public function createScope(){
-    return new TaintVariableRecord($this);
-  }
-
-  public function discardScope(){
-    return $this->parent;
+    return new ScopedTaintVariableRecord($this);
   }
 }
