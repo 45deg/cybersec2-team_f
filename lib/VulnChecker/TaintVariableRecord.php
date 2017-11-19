@@ -16,6 +16,10 @@ class TaintVariableRecord
   private $vars = array();
   private $parent;
 
+  const TAINTED_SUPER_GLOBALS = array(
+    '_GET', '_SET', '_REQUEST', '_COOKIE', '_FILES', 'argv'
+  );
+
   public function __construct($parent = NULL){
     $this->parent = $parent;
   }
@@ -25,6 +29,10 @@ class TaintVariableRecord
   }
 
   public function get($name){
+    if(in_array($name, self::TAINTED_SUPER_GLOBALS)) {
+      return TAINT_DITRY;
+    }
+
     if(isset($this->vars[$name])){
       return $this->vars[$name];
     } else if(isset($parent)) {
@@ -35,17 +43,6 @@ class TaintVariableRecord
   public function getOrElse($name, $default){
     $v = $this->get($name);
     return isset($v) ? $v : $default;
-  }
-
-  public static function createGlobalRecord(){
-    $ret = new TaintVariableRecord();
-    $taint_vars =  array(
-      '_GET', '_SET', '_REQUEST', '_COOKIE', '_FILES', 'argv'
-    );
-    foreach($taint_vars as $v) {
-      $ret->set($v, TAINT_DITRY);
-    }
-    return $ret;
   }
 
   public function createScope(){

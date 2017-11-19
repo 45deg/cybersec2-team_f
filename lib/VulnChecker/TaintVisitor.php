@@ -12,7 +12,7 @@ class TaintVisitor extends NodeVisitorAbstract
   protected $variables;
 
   public function __construct(){
-    $this->variables = TaintVariableRecord::createGlobalRecord();
+    $this->variables = new TaintVariableRecord();
   }
 
   public function enterNode(Node $node){
