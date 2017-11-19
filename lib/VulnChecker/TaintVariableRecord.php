@@ -34,6 +34,14 @@ class TaintVariableRecord
     }
   }
 
+  public function getFunction($name){
+    return $this->functions[$name];
+  }
+
+  public function setFunction($name, $type){
+    $this->functions[$name] = $type;
+  }
+
   public function getOrElse($name, $default){
     $v = $this->get($name);
     return isset($v) ? $v : $default;
