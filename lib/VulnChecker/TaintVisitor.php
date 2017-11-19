@@ -26,7 +26,9 @@ class TaintVisitor extends NodeVisitorAbstract
     if($node instanceof Node\FunctionLike){
       // discard scope
       $this->variables = $this->variables->discardScope();
-    } else if($node instanceof Expr) {
+    }
+    
+    if($node instanceof Expr) {
       $tainted = TAINT_MAYBE; // Expr のデフォルト汚染レベル: MAYBE
 
       if($node instanceof Expr\ArrayDimFetch){
