@@ -8,6 +8,13 @@ require_once "lib/bootstrap.php";
 $filename = $argv[1];
 if(!isset($filename)) die('Input a file.');
 
+$code = file_get_contents($filename);
+if($code === FALSE) {
+  die('Cannot load a file ' . $filename);
+}
+
+$position = new VulnChecker\PositionStore($code);
+
 $traverser = new PhpParser\NodeTraverser;
 $traverser->addVisitor(new VulnChecker\TaintVisitor);
 $traverser->addVisitor(new VulnChecker\Visitor);
@@ -16,10 +23,10 @@ $traverser->addVisitor(new VulnChecker\Visitor);
 $lexer = new PhpParser\Lexer(array(
   'usedAttributes' => array('startLine', 'startTokenPos')
 ));
+
 $parser = (new PhpParser\ParserFactory)->create(
                 PhpParser\ParserFactory::PREFER_PHP5, $lexer);
 try {
-  $code = file_get_contents($filename);
   $ast = $parser->parse($code);
   $traverser->traverse($ast);
 } catch (Error $error) {
