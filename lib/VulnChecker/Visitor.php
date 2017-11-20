@@ -21,7 +21,8 @@ class Visitor extends NodeVisitorAbstract
     if($node instanceof Node\Expr\Include_) {
       $tainted = $this->getTainted($node->expr);
       if($tainted > TAINT_CLEAN) {
-        $this->notice($node, "include or require is called!", $tainted);
+        $name = $this->includeType[$node->type];
+        $this->notice($node, "$name is called!", $tainted);
       }
     }
     /* 関数呼び出し */
@@ -51,6 +52,13 @@ class Visitor extends NodeVisitorAbstract
   private $evalFunc = array(
     "preg_replace"    => array(1), // 0番目がeのときのみ
     "create_function" => array(1)
+  );
+
+  private $includeType = array(
+    1 => 'include',
+    2 => 'include_once',
+    3 => 'require',
+    4 => 'require_once'
   );
 
   // TODO: もうちょっとまともに
