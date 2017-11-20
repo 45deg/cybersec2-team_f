@@ -8,6 +8,12 @@ use PhpParser\NodeVisitorAbstract;
 
 class Visitor extends NodeVisitorAbstract
 {
+
+  private $positionStore;
+
+  public function __construct(PositionStore $position){
+    $this->positionStore = $position;
+  }
   
   public function leaveNode(Node $node) {
     /* eval の場合 */
@@ -21,7 +27,8 @@ class Visitor extends NodeVisitorAbstract
     if($node instanceof Node\Expr\Include_) {
       $tainted = $this->getTainted($node->expr);
       if($tainted > TAINT_CLEAN) {
-        $this->notice($node, "include or require is called!", $tainted);
+        $name = $this->includeType[$node->type];
+        $this->notice($node, "$name is called!", $tainted);
       }
     }
     /* 関数呼び出し */
@@ -53,9 +60,18 @@ class Visitor extends NodeVisitorAbstract
     "create_function" => array(1)
   );
 
+  private $includeType = array(
+    1 => 'include',
+    2 => 'include_once',
+    3 => 'require',
+    4 => 'require_once'
+  );
+
   // TODO: もうちょっとまともに
   private function notice(Node $node, $message, $level) {
-    print "[{$node->getAttribute('startLine')}:{$node->getAttribute('startTokenPos')}]";
+    $line = $node->getAttribute('startLine');
+    $column = $this->positionStore->getColumn($line, $node->getAttribute('startFilePos'));
+    print "[{$line}:{$column}]";
     print "<$level> $message";
     print "\n";
   }
@@ -102,10 +118,17 @@ class Visitor extends NodeVisitorAbstract
       }
     } 
     else if($name instanceof Node\Expr\Variable) {
-      // TODO?
+      $tainted = $this->getTainted($name);  
+      if($tainted > TAINT_CLEAN) {
+        $this->notice($name, "function \${$name->name} is tainted!", $tainted);
+      }
     }
     else if($name instanceof Node\Expr\ArrayDimFetch) {
-      // TODO?
+      $target = $name->var;
+      $tainted = $this->getTainted($target);  
+      if($tainted > TAINT_CLEAN) {
+        $this->notice($name, "function \${$target->name}[] is tainted!", $tainted);
+      }
     }
     else {
       var_dump($name);
