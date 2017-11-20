@@ -13,23 +13,33 @@ const TAINT_CLEAN = 0;
 
 class TaintVariableRecord
 {
-  private $vars = array();
-  private $parent;
+  protected $vars = array();
+  protected $functions = array();
 
-  public function __construct($parent = NULL){
-    $this->parent = $parent;
-  }
+  const TAINTED_SUPER_GLOBALS = array(
+    '_GET', '_SET', '_REQUEST', '_COOKIE', '_FILES', 'argv'
+  );
 
   public function set($name, $type){
     $this->vars[$name] = $type;
   }
 
   public function get($name){
-    if(isset($this->vars[$name])){
+    if(in_array($name, self::TAINTED_SUPER_GLOBALS)) {
+      return TAINT_DITRY;
+    } else if(isset($this->vars[$name])){
       return $this->vars[$name];
-    } else if(isset($parent)) {
-      return $this->parent->get($name);
+    } else {
+      return NULL;
     }
+  }
+
+  public function getFunction($name){
+    return $this->functions[$name];
+  }
+
+  public function setFunction($name, $type){
+    $this->functions[$name] = $type;
   }
 
   public function getOrElse($name, $default){
@@ -37,18 +47,7 @@ class TaintVariableRecord
     return isset($v) ? $v : $default;
   }
 
-  public function getParent(){
-    return $this->parent;
-  }
-
-  public static function createGlobalRecord(){
-    $ret = new TaintVariableRecord();
-    $taint_vars =  array(
-      '_GET', '_SET', '_REQUEST', '_COOKIE', '_FILES', 'argv'
-    );
-    foreach($taint_vars as $v) {
-      $ret->set($v, TAINT_DITRY);
-    }
-    return $ret;
+  public function createScope(){
+    return new ScopedTaintVariableRecord($this);
   }
 }

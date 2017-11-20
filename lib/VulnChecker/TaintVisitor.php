@@ -3,6 +3,7 @@ namespace VulnChecker;
 
 use PhpParser\Node;
 use PhpParser\Node\Expr;
+use PhpParser\Node\Stmt;
 use PhpParser\NodeVisitorAbstract;
 
 /* Visitor パターンによる AST の解析 */
@@ -12,21 +13,42 @@ class TaintVisitor extends NodeVisitorAbstract
   protected $variables;
 
   public function __construct(){
-    $this->variables = TaintVariableRecord::createGlobalRecord();
+    $this->variables = new TaintVariableRecord();
   }
 
   public function enterNode(Node $node){
     if($node instanceof Node\FunctionLike){
       // create scope
-      $this->variables = new TaintVariableRecord($this->variables);
+      $this->variables = $this->variables->createScope();
     }
   }
 
   public function leaveNode(Node $node) {
     if($node instanceof Node\FunctionLike){
       // discard scope
-      $this->variables = $this->variables->getParent();
-    } else if($node instanceof Expr) {
+      $scope = $this->variables;
+      $this->variables = $scope->discardScope();
+      // add function definition
+      if($node instanceof Stmt\Function_){
+        $this->variables->setFunction($node->name, $scope->getFunctionInfo());
+      }
+    }
+
+    // 文の評価
+    if($node instanceof Stmt) {
+      if($node instanceof Stmt\Global_) {
+        foreach($node->vars as $var) {
+          $this->variables->addGlobal($this->getVarName($var));
+        }
+      } else if ($node instanceof Stmt\Return_) { 
+        assert($this->variables instanceof ScopedTaintVariableRecord,
+               'return is placed out of function');
+        $this->variables->addReturn($node->expr->getAttribute('taint'));
+      }
+    }
+
+    // 式の評価
+    if($node instanceof Expr) {
       $tainted = TAINT_MAYBE; // Expr のデフォルト汚染レベル: MAYBE
 
       if($node instanceof Expr\ArrayDimFetch){
@@ -138,6 +160,13 @@ class TaintVisitor extends NodeVisitorAbstract
       $name = $node->name->toString();
       if($name === 'escapeshellarg' || $name === 'escapeshellcmd'){
         return TAINT_ESCAPE_CLEAN;
+      } else if(!is_null($func = $this->variables->getFunction($name))){
+        // 定義済みの関数がある
+        foreach($func['globals'] as $name => $taint){
+          // グローバルの汚染を伝播
+          $this->variables->set($name, $taint);
+        }
+        return $func['return'];
       } else {
         // TODO
         return TAINT_MAYBE;
