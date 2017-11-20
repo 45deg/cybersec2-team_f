@@ -222,7 +222,8 @@ class TaintVisitor extends NodeVisitorAbstract
       return $node instanceof Stmt\Do_ ||
              $node instanceof Stmt\For_ ||
              $node instanceof Stmt\Foreach_ ||
-             $node instanceof Stmt\While_ ;
+             $node instanceof Stmt\While_ ||
+             $node instanceof Stmt\Switch_ ; // workaround
     } else {
       return FALSE;
     }
