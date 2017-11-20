@@ -4,6 +4,7 @@ namespace VulnChecker;
 class BranchTaintVariableRecord extends ScopedTaintVariableRecord {
 
   private $is_loop; // is it in loop (while, for, foreach ...)?
+  private $mask = FALSE;
 
   public function __construct($parent, $is_loop){
     parent::__construct($parent);
@@ -24,7 +25,12 @@ class BranchTaintVariableRecord extends ScopedTaintVariableRecord {
   }
 
   public function set($name, $type){
-    parent::set($name, $type);
+    if($this->mask) {
+      // copied from lift. calling lift directly causes infinite loop
+      parent::set($name, max($type, $this->get($name)));
+    } else {
+      parent::set($name, $type);
+    }
   }
 
   public function discardScope(){
@@ -32,5 +38,13 @@ class BranchTaintVariableRecord extends ScopedTaintVariableRecord {
       $this->parent->lift($var, $taint);
     }
     return $this->parent;
+  }
+
+  public function isLoop(){
+    return $this->is_loop;
+  }
+
+  public function setMask(){
+    $this->mask = true;
   }
 }

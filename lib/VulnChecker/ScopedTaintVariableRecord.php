@@ -13,11 +13,11 @@ abstract class ScopedTaintVariableRecord extends TaintVariableRecord {
     return $this->parent;
   }
 
-  public function findScopeOf($classname){
-    if(get_class($this) === $classname) {
+  public function findScope($pred){
+    if($pred($this)) {
       return $this;
     } else if($this->parent instanceof ScopedTaintVariableRecord) {
-      return $this->parent->findScopeOf($classname);
+      return $this->parent->findScope($pred);
     } else {
       return NULL;
     }
