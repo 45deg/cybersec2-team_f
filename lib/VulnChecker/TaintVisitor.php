@@ -54,9 +54,7 @@ class TaintVisitor extends NodeVisitorAbstract
       if($node instanceof Expr\ArrayDimFetch){
         // 配列アクセス
         $name = $this->getVarName($node);
-        $top_name = explode('$', $name)[0];
-        $tainted = $this->variables->getOrElse($top_name
-                      ,$this->variables->getOrElse($name,TAINT_MAYBE));
+        $tainted = $this->variables->get($name);
       } else if($node instanceof Expr\ArrayItem) {
         $tainted = $node->value->getAttribute('taint');
       } else if($node instanceof Expr\Assign || 
@@ -67,12 +65,12 @@ class TaintVisitor extends NodeVisitorAbstract
         // 変数名が取れる && ? が含まれていない場合 (配列アクセスに変数を用いていない場合)
         if(isset($name) && strpos($name, '?') === FALSE) {
           $tainted = $node->expr->getAttribute('taint');
-          // すでに変数が定義されている場合は汚染を伝播させる
-          // TODO: この場合 $a = $_GET['po']; $a = 1; のような変数の再代入に対応できない。
-          // なお、演算代入の場合はデフォルトが MAYBE 
-          $tainted = max($tainted, $this->variables->getOrElse($name, 
-                  ($node instanceof Expr\AssignOp) ? TAINT_MAYBE : TAINT_CLEAN));
-          $this->variables->set($name, $tainted);
+          if($node instanceof Expr\AssignOp) {
+            // 演算がある場合は持ち上げ
+            $this->variables->lift($name, $tainted);
+          } else {
+            $this->variables->set($name, $tainted);
+          }
         }
       } else if($node instanceof Expr\BinaryOp){
         // 二項演算 : 両方チェック
@@ -92,7 +90,7 @@ class TaintVisitor extends NodeVisitorAbstract
         $tainted = max($node->if->getAttribute('taint'), 
                        $node->else->getAttribute('taint'));
       } else if($node instanceof Expr\Variable){
-        $tainted = $this->variables->getOrElse($node->name, TAINT_MAYBE);
+        $tainted = $this->variables->get($node->name);
       } else if($node instanceof Node\Scalar) {
         // スカラー値
         if($node instanceof Node\Scalar\Encapsed) {

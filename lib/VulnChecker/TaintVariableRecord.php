@@ -24,13 +24,18 @@ class TaintVariableRecord
     $this->vars[$name] = $type;
   }
 
-  public function get($name){
-    if(in_array($name, self::TAINTED_SUPER_GLOBALS)) {
+  public function lift($name, $type){
+    $this->vars[$name] = max($type, $this->get($name));
+  }
+
+  public function get($name, $default = TAINT_MAYBE){
+    $top = substr($name, 0, strpos($name, '$'));
+    if(in_array($top, self::TAINTED_SUPER_GLOBALS)) {
       return TAINT_DITRY;
     } else if(isset($this->vars[$name])){
       return $this->vars[$name];
     } else {
-      return NULL;
+      return $default;
     }
   }
 
@@ -40,11 +45,6 @@ class TaintVariableRecord
 
   public function setFunction($name, $type){
     $this->functions[$name] = $type;
-  }
-
-  public function getOrElse($name, $default){
-    $v = $this->get($name);
-    return isset($v) ? $v : $default;
   }
 
   public function createScope(){

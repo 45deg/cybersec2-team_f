@@ -11,15 +11,12 @@ class ScopedTaintVariableRecord extends TaintVariableRecord {
     $this->parent = $parent;
   }
 
-  public function get($name){
+  public function get($name, $default = TAINT_MAYBE){
     if(isset($this->globals[$name])) {
       // グローバルならどこから呼ばれるのかわからないのでMAYBE
       return TAINT_MAYBE;
-    }
-
-    $super_get = parent::get($name); // 親クラス TaintVariableRecord の get
-    if(!is_null($super_get)) {
-      return $super_get;
+    } else {
+      return parent::get($name, $default); // 親クラス TaintVariableRecord の get
     }
   }
 
