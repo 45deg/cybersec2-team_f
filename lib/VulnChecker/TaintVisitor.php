@@ -42,13 +42,13 @@ class TaintVisitor extends NodeVisitorAbstract
     // 文の評価
     if($node instanceof Stmt) {
       if($node instanceof Stmt\Global_) {
-        $function = $this->getFunctionScope();
+        $function = $this->variables->findScopeOf('VulnChecker\\FunctionTaintVariableRecord');
         assert(isset($function), 'global is placed out of function');
         foreach($node->vars as $var) {
           $function->addGlobal($this->getVarName($var));
         }
       } else if ($node instanceof Stmt\Return_) { 
-        $function = $this->getFunctionScope();
+        $function = $this->variables->findScopeOf('VulnChecker\\FunctionTaintVariableRecord');
         assert(isset($function), 'return is placed out of function');
         $function->addReturn($node->expr->getAttribute('taint'));
       }
@@ -187,17 +187,6 @@ class TaintVisitor extends NodeVisitorAbstract
     } else if($node->name instanceof Expr) {
       return $node->name->getAttribute('taint');
     }
-  }
-
-  private function getFunctionScope(){
-    $curr = $this->variables;
-    while($curr !== NULL) {
-      if($curr instanceof FunctionTaintVariableRecord) {
-        return $curr;
-      }
-      $curr = $curr->getParent();
-    }
-    return NULL;
   }
 
   private function isBranch(Node $node){
