@@ -17,7 +17,7 @@ $position = new VulnChecker\PositionStore($code);
 
 $traverser = new PhpParser\NodeTraverser;
 $traverser->addVisitor(new VulnChecker\TaintVisitor);
-$traverser->addVisitor(new VulnChecker\Visitor);
+$traverser->addVisitor(new VulnChecker\Visitor($position));
 
 /* パース */
 $lexer = new PhpParser\Lexer(array(

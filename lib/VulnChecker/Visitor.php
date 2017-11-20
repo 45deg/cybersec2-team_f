@@ -8,6 +8,12 @@ use PhpParser\NodeVisitorAbstract;
 
 class Visitor extends NodeVisitorAbstract
 {
+
+  private $positionStore;
+
+  public function __construct(PositionStore $position){
+    $this->positionStore = $position;
+  }
   
   public function leaveNode(Node $node) {
     /* eval の場合 */
@@ -55,7 +61,9 @@ class Visitor extends NodeVisitorAbstract
 
   // TODO: もうちょっとまともに
   private function notice(Node $node, $message, $level) {
-    print "[{$node->getAttribute('startLine')}:{$node->getAttribute('startFilePos')}]";
+    $line = $node->getAttribute('startLine');
+    $column = $this->positionStore->getColumn($line, $node->getAttribute('startFilePos'));
+    print "[{$line}:{$column}]";
     print "<$level> $message";
     print "\n";
   }
