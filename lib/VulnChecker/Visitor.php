@@ -100,6 +100,30 @@ class Visitor extends NodeVisitorAbstract
     return max(array_map($func, $arr));
   }
 
+  // 雑
+  private function lastString($node) {
+    if($node instanceof Node\Scalar\String_) {
+      return $node->value;
+    }
+    else if($node instanceof Node\Expr\BinaryOp) {
+      return $this->lastString($node->right);
+    }
+    else if($node instanceof Node\Scalar\Encapsed) {
+      $arr = $node->parts;
+      $last = end($arr);
+      if($last instanceof Node\Scalar\EncapsedStringPart) {
+        return $last->value;
+      }
+      if($this->getTainted($last) > TAINT_CLEAN) {
+        return "/e";
+      }
+    }
+    if($this->getTainted($node) > TAINT_CLEAN) {
+      return "/e";
+    }
+    return "/ok";
+  }
+
   private function checkFuncCall(Node $node) {
     $name = $node->name;
     if($name instanceof Node\Name) {
@@ -110,7 +134,17 @@ class Visitor extends NodeVisitorAbstract
           $this->notice($node, "$funcName is called!", $tainted);
         }
       } else if(array_key_exists($funcName, $this->evalFunc)) {
-        // TODO: preg_replace eオプションの考慮
+        if($funcName == "preg_replace") {
+          $temp = $this->lastString($node->args[0]->value);
+          $arr = explode('/', $temp);
+          $last = end($arr);
+          if(!strstr($last, 'e')) {
+            //print 'preg_replace:: SAFE!' . PHP_EOL;
+            return;
+          } else {
+            //print "preg_replace:: GYAAAAAA" . PHP_EOL;
+          }
+        }
         $tainted = $this->getArgumentsTainted($node->args, $this->evalFunc[$funcName]);  
         if($tainted > TAINT_CLEAN) {
           $this->notice($node, "$funcName (eval) is called!", $tainted);

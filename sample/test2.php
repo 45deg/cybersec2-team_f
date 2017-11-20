@@ -92,13 +92,17 @@ print '<hr>';
 
 
 $ev = $_GET['ev'];
+$reg = $_GET['reg'];
 
 print '[preg_replace]' . '<br>';
-print preg_replace('/(.*)/e', $ev, '');
+print preg_replace('/(.*)/' . 'ei', $ev, '');
+preg_replace('/(.*)/e', $ev, '');
+preg_replace("$reg", "$ev", '');
 
 // ok
 preg_replace('/(.*)/i', $ev, '');
 preg_replace("/{$ev}/i", 'hoge', '');
+preg_replace("$reg", 'hoge', '');
 
 print '<hr>';
 
