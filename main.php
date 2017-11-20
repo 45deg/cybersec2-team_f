@@ -21,9 +21,8 @@ $traverser->addVisitor(new VulnChecker\Visitor);
 
 /* パース */
 $lexer = new PhpParser\Lexer(array(
-  'usedAttributes' => array('startLine', 'startTokenPos')
+  'usedAttributes' => array('startLine', 'startFilePos')
 ));
-
 $parser = (new PhpParser\ParserFactory)->create(
                 PhpParser\ParserFactory::PREFER_PHP5, $lexer);
 try {

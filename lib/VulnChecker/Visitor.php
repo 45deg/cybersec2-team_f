@@ -55,7 +55,7 @@ class Visitor extends NodeVisitorAbstract
 
   // TODO: もうちょっとまともに
   private function notice(Node $node, $message, $level) {
-    print "[{$node->getAttribute('startLine')}:{$node->getAttribute('startTokenPos')}]";
+    print "[{$node->getAttribute('startLine')}:{$node->getAttribute('startFilePos')}]";
     print "<$level> $message";
     print "\n";
   }
