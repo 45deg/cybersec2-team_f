@@ -47,3 +47,18 @@ try {
   $f = $_GET['unsafe'];
 }
 system($f);
+
+// test 9
+if($pa === 1) {
+  if($pi === 4) $c = $_GET['po'];
+  if($e) $f = $c . $d;
+  else $f = 'clean';
+  system($f);
+  for($i = 0; $i < 10; $i++) {
+    if($i == 3) break;
+    $na = 'clean'; // ← 上に break があるため $na は秘匿される
+    system($f);
+  } 
+  system($na); // <Lv10> になるはず
+}
+system($c);
