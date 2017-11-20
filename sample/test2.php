@@ -123,6 +123,7 @@ $pao = array($_GET['nya'], $_GET['nyao']);
 print $pao[0]($pao[1]);
 
 print '<hr>';
+
 print '[require / include]' . '<br>';
 
 require($file);
