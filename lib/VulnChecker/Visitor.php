@@ -102,10 +102,17 @@ class Visitor extends NodeVisitorAbstract
       }
     } 
     else if($name instanceof Node\Expr\Variable) {
-      // TODO?
+      $tainted = $this->getTainted($name);  
+      if($tainted > TAINT_CLEAN) {
+        $this->notice($name, "function \${$name->name} is tainted!", $tainted);
+      }
     }
     else if($name instanceof Node\Expr\ArrayDimFetch) {
-      // TODO?
+      $target = $name->var;
+      $tainted = $this->getTainted($target);  
+      if($tainted > TAINT_CLEAN) {
+        $this->notice($name, "function \${$target->name}[] is tainted!", $tainted);
+      }
     }
     else {
       var_dump($name);
