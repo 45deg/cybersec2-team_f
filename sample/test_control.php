@@ -13,7 +13,8 @@ if($_GET['a'] > 0) {
 system($b);
 
 // test 3
-system($cond ? $_GET['dirty'] : $clean);
+$cond ? ($no = 'clean') : ($no = $_GET['dirty']);
+system($no);
 
 // test 4
 $c = 'echo safe';
@@ -30,3 +31,19 @@ while($cond) {
   $d = 'echo clean';
 }
 system($d);
+
+// test 7
+try {
+  $e = $_GET['unsafe'];
+} catch(Exception $e_) {
+  $e = 'echo clean';
+}
+system($e);
+
+// test 8
+try {
+  $f = 'echo clean';
+} catch(Exception $e) {
+  $f = $_GET['unsafe'];
+}
+system($f);
