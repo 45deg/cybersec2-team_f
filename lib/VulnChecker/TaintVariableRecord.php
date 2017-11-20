@@ -25,8 +25,8 @@ class TaintVariableRecord
     $this->vars[$name] = $type;
   }
 
-  public function lift($name, $type){
-    $this->vars[$name] = max($type, $this->get($name));
+  public function lift($name, $type, $default = TAINT_CLEAN){
+    $this->set($name, max($type, $this->get($name, $default)));
   }
 
   public function get($name, $default = TAINT_MAYBE){
@@ -55,6 +55,10 @@ class TaintVariableRecord
   public function createScope($type){
     if($type === self::SCOPE_FUNCTION) {
       return new FunctionTaintVariableRecord($this);
+    } else if($type === self::SCOPE_BRANCH) {
+      return new BranchTaintVariableRecord($this, FALSE);
+    } else if($type === self::SCOPE_LOOP) {
+      return new BranchTaintVariableRecord($this, TRUE);
     }
   }
 }

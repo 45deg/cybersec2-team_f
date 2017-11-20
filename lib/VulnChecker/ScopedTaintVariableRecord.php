@@ -12,4 +12,8 @@ abstract class ScopedTaintVariableRecord extends TaintVariableRecord {
   public function discardScope(){
     return $this->parent;
   }
+
+  public function getParent(){
+    return $this->parent;
+  }
 }
