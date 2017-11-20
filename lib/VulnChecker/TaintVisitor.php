@@ -19,7 +19,7 @@ class TaintVisitor extends NodeVisitorAbstract
   public function enterNode(Node $node){
     if($node instanceof Node\FunctionLike){
       // create scope
-      $this->variables = $this->variables->createScope();
+      $this->variables = $this->variables->createScope(TaintVariableRecord::SCOPE_FUNCTION);
     }
   }
 
@@ -41,7 +41,7 @@ class TaintVisitor extends NodeVisitorAbstract
           $this->variables->addGlobal($this->getVarName($var));
         }
       } else if ($node instanceof Stmt\Return_) { 
-        assert($this->variables instanceof ScopedTaintVariableRecord,
+        assert($this->variables instanceof FunctionTaintVariableRecord,
                'return is placed out of function');
         $this->variables->addReturn($node->expr->getAttribute('taint'));
       }

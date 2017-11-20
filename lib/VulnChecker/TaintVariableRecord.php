@@ -13,6 +13,7 @@ const TAINT_CLEAN = 0;
 
 class TaintVariableRecord
 {
+
   protected $vars = array();
   protected $functions = array();
 
@@ -47,7 +48,13 @@ class TaintVariableRecord
     $this->functions[$name] = $type;
   }
 
-  public function createScope(){
-    return new ScopedTaintVariableRecord($this);
+  const SCOPE_FUNCTION = 1;
+  const SCOPE_BRANCH = 2;
+  const SCOPE_LOOP = 3;
+
+  public function createScope($type){
+    if($type === self::SCOPE_FUNCTION) {
+      return new FunctionTaintVariableRecord($this);
+    }
   }
 }
