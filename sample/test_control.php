@@ -26,7 +26,7 @@ system($c);
 // test 5
 while($cond) {
   $d = $_GET['unsafe'];
-  break;
+  if($po) break;
   $d = 'echo clean';
 }
 system($d);
