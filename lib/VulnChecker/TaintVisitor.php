@@ -20,11 +20,16 @@ class TaintVisitor extends NodeVisitorAbstract
     if($node instanceof Node\FunctionLike){
       // create scope
       $this->variables = $this->variables->createScope(TaintVariableRecord::SCOPE_FUNCTION);
+    } else if($this->isBranch($node)){
+      $this->variables = $this->variables->createScope(TaintVariableRecord::SCOPE_BRANCH);
+    } else if($this->isLoop($node)){
+      $this->variables = $this->variables->createScope(TaintVariableRecord::SCOPE_LOOP);
     }
   }
 
   public function leaveNode(Node $node) {
-    if($node instanceof Node\FunctionLike){
+    if($node instanceof Node\FunctionLike ||
+       $this->isBranch($node) || $this->isLoop($node)){
       // discard scope
       $scope = $this->variables;
       $this->variables = $scope->discardScope();
@@ -37,13 +42,15 @@ class TaintVisitor extends NodeVisitorAbstract
     // 文の評価
     if($node instanceof Stmt) {
       if($node instanceof Stmt\Global_) {
+        $function = $this->getFunctionScope();
+        assert(isset($function), 'global is placed out of function');
         foreach($node->vars as $var) {
-          $this->variables->addGlobal($this->getVarName($var));
+          $function->addGlobal($this->getVarName($var));
         }
       } else if ($node instanceof Stmt\Return_) { 
-        assert($this->variables instanceof FunctionTaintVariableRecord,
-               'return is placed out of function');
-        $this->variables->addReturn($node->expr->getAttribute('taint'));
+        $function = $this->getFunctionScope();
+        assert(isset($function), 'return is placed out of function');
+        $function->addReturn($node->expr->getAttribute('taint'));
       }
     }
 
@@ -76,6 +83,11 @@ class TaintVisitor extends NodeVisitorAbstract
         // 二項演算 : 両方チェック
         $tainted = max($node->left->getAttribute('taint'), 
                        $node->right->getAttribute('taint'));
+        // 右の項は評価されないかもしれない
+        if($node instanceof Expr\BooleanAnd ||
+           $node instanceof Expr\BooleanOr){
+          $node->right->setAttribute('branch', TRUE);
+        }
       } else if($node instanceof Expr\Cast || 
                 $node instanceof Expr\Clone_ ||
                 $node instanceof Expr\ErrorSuppress){
@@ -89,6 +101,9 @@ class TaintVisitor extends NodeVisitorAbstract
         // 三項演算 : 両方チェック
         $tainted = max($node->if->getAttribute('taint'), 
                        $node->else->getAttribute('taint'));
+        // 条件分岐であるか
+        $node->if->setAttribute('branch', TRUE);
+        $node->else->setAttribute('branch', TRUE);
       } else if($node instanceof Expr\Variable){
         $tainted = $this->variables->get($node->name);
       } else if($node instanceof Node\Scalar) {
@@ -171,6 +186,43 @@ class TaintVisitor extends NodeVisitorAbstract
       }
     } else if($node->name instanceof Expr) {
       return $node->name->getAttribute('taint');
+    }
+  }
+
+  private function getFunctionScope(){
+    $curr = $this->variables;
+    while($curr !== NULL) {
+      if($curr instanceof FunctionTaintVariableRecord) {
+        return $curr;
+      }
+      $curr = $curr->getParent();
+    }
+    return NULL;
+  }
+
+  private function isBranch(Node $node){
+    if($node instanceof Stmt) {
+      return $node instanceof Stmt\Catch_ ||
+             $node instanceof Stmt\Else_ ||
+             $node instanceof Stmt\ElseIf_ ||
+             $node instanceof Stmt\Finally_ ||
+             $node instanceof Stmt\If_ ||
+             $node instanceof Stmt\TryCatch;
+    } else if($node instanceof Expr) {
+      return $node->getAttribute('branch') === TRUE;
+    } else {
+      return FALSE;
+    }
+  }
+
+  private function isLoop(Node $node){
+    if($node instanceof Stmt) {
+      return $node instanceof Stmt\Do_ ||
+             $node instanceof Stmt\For_ ||
+             $node instanceof Stmt\Foreach_ ||
+             $node instanceof Stmt\While_ ;
+    } else {
+      return FALSE;
     }
   }
 }
