@@ -27,6 +27,8 @@ class PositionStore {
   }
 
   public function getLine($number){
+    if(!isset($this->offsets[$number]))
+      return NULL;
     $start = $this->offsets[$number];
     if(isset($this->offsets[$number + 1])) {
       $length = $this->offsets[$number + 1] - $start;
