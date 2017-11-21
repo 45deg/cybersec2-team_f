@@ -155,7 +155,11 @@ class Visitor extends NodeVisitorAbstract
     else if($name instanceof Node\Expr\Variable) {
       $tainted = $this->getTainted($name);  
       if($tainted > TAINT_CLEAN) {
-        $this->notice($name, "function \${$name->name} is tainted!", $tainted);
+        if(is_string($name->name)){
+          $this->notice($name, "function \${$name->name} is tainted!", $tainted);
+        } else {
+          $this->notice($name, "tainted function is called!", $tainted);
+        }
       }
     }
     else if($name instanceof Node\Expr\ArrayDimFetch) {
