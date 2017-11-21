@@ -112,11 +112,16 @@ class TaintVisitor extends NodeVisitorAbstract
         $tainted = $this->analyzeFunctionCall($node);
       } else if($node instanceof Expr\Ternary){
         // 三項演算 : 両方チェック
-        $tainted = max($node->if->getAttribute('taint'), 
-                       $node->else->getAttribute('taint'));
-        // 条件分岐であるか
-        $node->if->setAttribute('branch', TRUE);
-        $node->else->setAttribute('branch', TRUE);
+        if(is_null($node->if)) {
+          // PHP 5.3 以上だと if を省略できる。
+          $tainted = max($node->cond->getAttribute('taint'), 
+                         $node->else->getAttribute('taint'));
+        } else {
+          $tainted = max($node->if->getAttribute('taint'), 
+                         $node->else->getAttribute('taint'));
+          $node->if->setAttribute('branch', TRUE); // if 式は評価されない場合がある
+        }
+        $node->else->setAttribute('branch', TRUE); // else 式は評価されない場合がある
       } else if($node instanceof Expr\Variable){
         $tainted = $this->variables->get($node->name);
       } else if($node instanceof Node\Scalar) {

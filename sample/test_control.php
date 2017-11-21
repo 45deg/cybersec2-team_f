@@ -16,6 +16,9 @@ system($b);
 $cond ? ($no = 'clean') : ($no = $_GET['dirty']);
 system($no);
 
+// test 3.1
+system(($no = $_GET['dirty']) ?: ($no = 'clean'));
+
 // test 4
 $c = 'echo safe';
 while($cond) {
