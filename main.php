@@ -31,7 +31,7 @@ $parser = (new PhpParser\ParserFactory)->create(
 try {
   $ast = $parser->parse($code);
   $traverser->traverse($ast);
-} catch (Error $error) {
+} catch (PhpParser\Error $error) {
   die("Parse error: {$error->getMessage()}");
 }
 

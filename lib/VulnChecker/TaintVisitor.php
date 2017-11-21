@@ -47,13 +47,14 @@ class TaintVisitor extends NodeVisitorAbstract
         });
         assert(isset($function), 'global is placed out of function');
         foreach($node->vars as $var) {
-          $function->addGlobal($this->getVarName($var));
+          $name = $this->getVarName($var);
+          if(!is_null($name)) $function->addGlobal($name);
         }
       } else if ($node instanceof Stmt\Return_) { 
         $function = $this->variables->findScope(function($scope){
           return $scope instanceof FunctionTaintVariableRecord;
         });
-        if(isset($function)) {
+        if(isset($function) && !is_null($node->expr)) {
           $function->addReturn($node->expr->getAttribute('taint'));
         }
       } else if ($node instanceof Stmt\Continue_ ||
@@ -75,7 +76,7 @@ class TaintVisitor extends NodeVisitorAbstract
       if($node instanceof Expr\ArrayDimFetch){
         // 配列アクセス
         $name = $this->getVarName($node);
-        $tainted = $this->variables->get($name);
+        if(!is_null($name)) $tainted = $this->variables->get($name);
       } else if($node instanceof Expr\ArrayItem) {
         $tainted = $node->value->getAttribute('taint');
       } else if($node instanceof Expr\Assign || 
@@ -84,7 +85,7 @@ class TaintVisitor extends NodeVisitorAbstract
         // 代入式
         $name = $this->getVarName($node->var);
         // 変数名が取れる && ? が含まれていない場合 (配列アクセスに変数を用いていない場合)
-        if(isset($name) && strpos($name, '?') === FALSE) {
+        if(!is_null($name) && strpos($name, '?') === FALSE) {
           $tainted = $node->expr->getAttribute('taint');
           if($node instanceof Expr\AssignOp) {
             // 演算がある場合は持ち上げ
@@ -124,7 +125,9 @@ class TaintVisitor extends NodeVisitorAbstract
         }
         $node->else->setAttribute('branch', TRUE); // else 式は評価されない場合がある
       } else if($node instanceof Expr\Variable){
-        $tainted = $this->variables->get($node->name);
+        if(is_string($node->name)){
+          $tainted = $this->variables->get($node->name);
+        }
       } else if($node instanceof Node\Scalar) {
         // スカラー値
         if($node instanceof Node\Scalar\Encapsed) {
@@ -169,7 +172,10 @@ class TaintVisitor extends NodeVisitorAbstract
   private function getVarName(Node $lvalue){
     if($lvalue instanceof Expr\Variable) {
       // Variable(v) => v
-      return $lvalue->name;
+      if(is_string($lvalue->name))
+        return $lvalue->name;
+      else // variable variables
+        return NULL; 
     } else if($lvalue instanceof Expr\ArrayDimFetch){
       // ArrayDim(v, k) => (getVarName v):k
       $var_name = $this->getVarName($lvalue->var);

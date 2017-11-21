@@ -61,4 +61,8 @@ class TaintVariableRecord
       return new BranchTaintVariableRecord($this, TRUE);
     }
   }
+
+  public function findScope($pred){
+    return NULL;
+  }
 }
