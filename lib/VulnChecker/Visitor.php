@@ -170,7 +170,7 @@ class Visitor extends NodeVisitorAbstract
       }
     }
     else {
-      var_dump($name);
+      // var_dump($name);
     }
 
   }
