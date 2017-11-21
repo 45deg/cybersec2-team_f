@@ -5,8 +5,11 @@ require_once "vendor/autoload.php";
 require_once "lib/bootstrap.php";
 
 /* ファイル読み込み */
-$filename = $argv[1];
-if(!isset($filename)) die('Input a file.');
+$path = $argv[1];
+if(!isset($path)) die('Input a file.');
+
+
+function check($filename) {
 
 $code = file_get_contents($filename);
 if($code === FALSE) {
@@ -30,4 +33,29 @@ try {
   $traverser->traverse($ast);
 } catch (Error $error) {
   die("Parse error: {$error->getMessage()}");
+}
+
+}
+
+if(is_file($path)) {
+  print "===========================" . PHP_EOL;
+  print "$path" . PHP_EOL;
+  print "---------------------------" . PHP_EOL;
+  check($path);
+}
+else if(is_dir($path)) {
+  $files = scandir($path);
+  foreach($files as $file) {
+    $fullpath = "$path/$file";
+    if(is_file($fullpath)) {
+      print "===========================" . PHP_EOL;
+      print "$fullpath" . PHP_EOL;
+      print "---------------------------" . PHP_EOL;
+      check($fullpath);
+    }
+  }
+  print "===========================" . PHP_EOL;
+}
+else {
+  die('Unknown input.');
 }
