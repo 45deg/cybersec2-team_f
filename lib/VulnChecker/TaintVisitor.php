@@ -53,8 +53,9 @@ class TaintVisitor extends NodeVisitorAbstract
         $function = $this->variables->findScope(function($scope){
           return $scope instanceof FunctionTaintVariableRecord;
         });
-        assert(isset($function), 'return is placed out of function');
-        $function->addReturn($node->expr->getAttribute('taint'));
+        if(isset($function)) {
+          $function->addReturn($node->expr->getAttribute('taint'));
+        }
       } else if ($node instanceof Stmt\Continue_ ||
                  $node instanceof Stmt\Break_) {
         // TODO: ラベル付きの場合, switch 中の break の場合
