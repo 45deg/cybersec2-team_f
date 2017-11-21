@@ -1,6 +1,6 @@
 <html>
 <head></head>
-<body>
+<body><img src="./img/upper.png" width="1024" alt="image">
 <form action="upper.php" method="GET">
   text: <input type="text" name="text" value="" placeholder="hello world">
   <p>

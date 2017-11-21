@@ -8,7 +8,7 @@ pre {
 }  
 </style>
 </head>
-<body>
+<body><img src="./img/banner.png" width="1024" alt="image">
 <form action="banner.php" method="GET">
   <input type="text" name="text" value="">
   <p>

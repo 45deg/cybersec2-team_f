@@ -1,6 +1,6 @@
 <html>
 <head></head>
-<body>
+<body><img src="./img/ls.png" width="1024" alt="image">
 <form action="ls.php" method="GET">
   filter: <input type="text" name="text" value="">
   <p>
