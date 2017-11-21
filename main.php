@@ -5,12 +5,15 @@ require_once "vendor/autoload.php";
 require_once "lib/bootstrap.php";
 
 /* ファイル読み込み */
-$filename = $argv[1];
-if(!isset($filename)) die('Input a file.');
+$path = $argv[1];
+if(!isset($path)) die('Input a file.');
+
+
+function check($filename) {
 
 $code = file_get_contents($filename);
 if($code === FALSE) {
-  die('Cannot load a file ' . $filename);
+  fputs(STDERR, "Cannot load a file $filename" . PHP_EOL);
 }
 
 $position = new VulnChecker\PositionStore($code);
@@ -29,5 +32,40 @@ try {
   $ast = $parser->parse($code);
   $traverser->traverse($ast);
 } catch (PhpParser\Error $error) {
-  die("Parse error: {$error->getMessage()}");
+  fputs(STDERR, "Parse error: {$error->getMessage()}" . PHP_EOL);
+}
+
+}
+
+function isPHPFile($filename) {
+  $ext = substr($filename, strrpos($filename, '.') + 1);
+  return $ext == "php";
+}
+
+function checkDirectory($path) {
+  $files = scandir($path);
+  foreach($files as $file) {
+    $fullpath = "$path/$file";
+    if(is_file($fullpath) && isPHPFile($file)) {
+      print "===========================" . PHP_EOL;
+      print "$fullpath" . PHP_EOL;
+      print "---------------------------" . PHP_EOL;
+      check($fullpath);
+    }
+    else if(is_dir($fullpath) && $file != ".." && $file != ".") {
+      checkDirectory($fullpath);
+    }
+  }
+}
+
+if(is_file($path) && isPHPFile($path)) {
+  print "===========================" . PHP_EOL;
+  print "$path" . PHP_EOL;
+  print "---------------------------" . PHP_EOL;
+  check($path);
+}
+else if(is_dir($path)) {
+  checkDirectory($path);}
+else {
+  die('Unknown input.');
 }
