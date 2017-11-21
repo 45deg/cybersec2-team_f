@@ -72,9 +72,17 @@ class Visitor extends NodeVisitorAbstract
   private function notice(Node $node, $message, $level) {
     $line = $node->getAttribute('startLine');
     $column = $this->positionStore->getColumn($line, $node->getAttribute('startFilePos'));
+    $level_str = (string)$level;
+    if($level == TAINT_DITRY) {
+      $level_str = "DANGER";
+      echo "\033[0;31m";
+    } else if($level == TAINT_MAYBE) {
+      $level_str = "WARNING";
+      echo "\033[1;33m";
+    }
     print "[{$line}:{$column}]";
-    print "<$level> $message";
-    print "\n";
+    print " ($level_str) $message";
+    print "\033[0m\n";
   }
 
   private function getTainted(Node $node) {
