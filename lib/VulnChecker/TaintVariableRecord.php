@@ -3,7 +3,7 @@ namespace VulnChecker;
 
 // 汚染レベル
 // DIRTY 危険、$_GET などを直接用いている
-const TAINT_DITRY = 20;
+const TAINT_DIRTY = 20;
 // MAYBE 外部関数呼び出しの返り値や解決できない変数などを用いている
 const TAINT_MAYBE = 10; 
 // CLEAN_ESACPE shellescape を施している
@@ -32,7 +32,7 @@ class TaintVariableRecord
   public function get($name, $default = TAINT_MAYBE){
     $top = substr($name, 0, strpos($name, '$'));
     if(in_array($top, self::TAINTED_SUPER_GLOBALS)) {
-      return TAINT_DITRY;
+      return TAINT_DIRTY;
     } else if(isset($this->vars[$name])){
       return $this->vars[$name];
     } else {
