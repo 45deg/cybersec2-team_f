@@ -24,7 +24,7 @@ class Visitor extends NodeVisitorAbstract
       }
     }
     /* require / include * */
-    if($node instanceof Node\Expr\Include_) {
+    else if($node instanceof Node\Expr\Include_) {
       $tainted = $this->getTainted($node->expr);
       if($tainted > TAINT_CLEAN) {
         $name = $this->includeType[$node->type];
@@ -57,7 +57,8 @@ class Visitor extends NodeVisitorAbstract
 
   private $evalFunc = array(
     "preg_replace"    => array(1), // 0番目がeのときのみ
-    "create_function" => array(1)
+    "create_function" => array(1),
+    "assert"          => array(0)
   );
 
   private $includeType = array(

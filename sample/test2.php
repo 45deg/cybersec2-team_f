@@ -4,9 +4,10 @@
 
 $code = $_GET['code'];
 
-/* vuln: localhost:8080/test2.php?code=hello;%20ls&ev=shell_exec(%22ls%22); */
-
+/* vuln: localhost:8080/test2.php?code=hello;%20ls&ev=shell_exec(%22ls%22);&ev2=echo%20shell_exec(%22ls%22); */
+/* http://localhost:8080/test2.php?code=hello;%20ls&ev=shell_exec(%22ls%22);&file=../main.php&ev=shell_exec(%22ls%22);&nya=shell_exec&nyao=%27ls%27&reg=%2f%28%2e%2a%29%2fe&ev2=print%20shell_exec(%22ls%22); */
 /* http://php.net/manual/ja/ref.exec.php */
+
 print '[exec]' . '<br>';
 exec("echo ${code}", $output);
 print implode(' ', $output);
@@ -125,6 +126,11 @@ print '<hr>';
 print '[FunctionCall2]' . '<br>';
 $pao = array($_GET['nya'], $_GET['nyao']);
 print $pao[0]($pao[1]);
+
+print '<hr>';
+
+print '[assert]' . '<br>';
+assert($_GET['ev2']);
 
 print '<hr>';
 
