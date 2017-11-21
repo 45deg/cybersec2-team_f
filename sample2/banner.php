@@ -19,7 +19,6 @@ pre {
 <?php
 /* 組み込み簡易サーバー */
 // php -t sample2 -S localhost:8081
-
 // localhost:8081/banner.php?text=cyber
 // localhost:8081/banner.php?text=%3B+echo+HACK
 
@@ -28,7 +27,7 @@ if(isset($_GET['text'])) {
   $text = trim($_GET['text']);
   if(strlen($text) < 1) $text = "?";
 }
-$aa = shell_exec("banner -w 50 ." . $text);
+$aa = shell_exec("banner -w 50 ." . $text);     // MAYBE
 print '<pre>';
-print preg_replace('/(\r*\n)/i', '<br>', $aa);
+print preg_replace('/(\r*\n)/i', '<br>', $aa);  // SAFE
 print '</pre>';
