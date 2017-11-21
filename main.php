@@ -17,7 +17,7 @@ if(empty($options)) {
 } else {
   $path = $options['f'];
   $simple = isset($options['s']) ? TRUE : FALSE;
-  $hunk = isset($options['s']) ? (int)$options['n'] : 3;
+  $hunk = isset($options['n']) ? (int)$options['n'] : 3;
   //var_dump($options);
 }
 

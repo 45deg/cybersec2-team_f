@@ -11,4 +11,12 @@ php composer.phar install
 
 ```
 php main.php sample/test1.php
+
+# ディレクトリ指定
+php main.php sample
+
+# コード片行数指定
+php main.php -n2 -fsample 
+# シンプル表示
+php main.php -s -fsample 
 ```
