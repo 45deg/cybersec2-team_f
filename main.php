@@ -13,7 +13,7 @@ function check($filename) {
 
 $code = file_get_contents($filename);
 if($code === FALSE) {
-  die('Cannot load a file ' . $filename);
+  fputs(STDERR, "Cannot load a file $filename" . PHP_EOL);
 }
 
 $position = new VulnChecker\PositionStore($code);
@@ -32,7 +32,7 @@ try {
   $ast = $parser->parse($code);
   $traverser->traverse($ast);
 } catch (PhpParser\Error $error) {
-  die("Parse error: {$error->getMessage()}");
+  fputs(STDERR, "Parse error: {$error->getMessage()}" . PHP_EOL);
 }
 
 }
