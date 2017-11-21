@@ -4,13 +4,26 @@
 require_once "vendor/autoload.php";
 require_once "lib/bootstrap.php";
 
+
+// -f="path"  : 検査対象
+// -s         : コード片表示をなくす
+// -n 3       : コード片表示行数
+$options = getopt("f:sn::");
+if(empty($options)) {
+  $path = $argv[1];
+  if(!isset($path)) die('Input a file or directory.');
+  $simple = FALSE;
+  $hunk = 3;
+} else {
+  $path = $options['f'];
+  $simple = isset($options['s']) ? TRUE : FALSE;
+  $hunk = isset($options['s']) ? (int)$options['n'] : 3;
+  //var_dump($options);
+}
+
+function check($filename, $simple, $hunk) {
+
 /* ファイル読み込み */
-$path = $argv[1];
-if(!isset($path)) die('Input a file.');
-
-
-function check($filename) {
-
 $code = file_get_contents($filename);
 if($code === FALSE) {
   fputs(STDERR, "Cannot load a file $filename" . PHP_EOL);
@@ -20,7 +33,7 @@ $position = new VulnChecker\PositionStore($code);
 
 $traverser = new PhpParser\NodeTraverser;
 $traverser->addVisitor(new VulnChecker\TaintVisitor);
-$traverser->addVisitor(new VulnChecker\Visitor($position));
+$traverser->addVisitor(new VulnChecker\Visitor($position, $simple, $hunk));
 
 /* パース */
 $lexer = new PhpParser\Lexer(array(
@@ -42,7 +55,7 @@ function isPHPFile($filename) {
   return $ext == "php";
 }
 
-function checkDirectory($path) {
+function checkDirectory($path, $simple, $hunk) {
   $files = scandir($path);
   foreach($files as $file) {
     $fullpath = "$path/$file";
@@ -50,10 +63,10 @@ function checkDirectory($path) {
       print "===========================" . PHP_EOL;
       print "$fullpath" . PHP_EOL;
       print "---------------------------" . PHP_EOL;
-      check($fullpath);
+      check($fullpath, $simple, $hunk);
     }
     else if(is_dir($fullpath) && $file != ".." && $file != ".") {
-      checkDirectory($fullpath);
+      checkDirectory($fullpath, $simple, $hunk);
     }
   }
 }
@@ -62,7 +75,7 @@ if(is_file($path) && isPHPFile($path)) {
   check($path);
 }
 else if(is_dir($path)) {
-  checkDirectory($path);}
+  checkDirectory($path, $simple, $hunk);}
 else {
   die('Not file or directory.');
 }
