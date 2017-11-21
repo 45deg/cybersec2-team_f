@@ -19,12 +19,17 @@ class TaintVisitor extends NodeVisitorAbstract
   public function enterNode(Node $node){
     if($node instanceof Node\FunctionLike){
       // create scope
-      $this->variables = $this->variables->createScope();
+      $this->variables = $this->variables->createScope(TaintVariableRecord::SCOPE_FUNCTION);
+    } else if($this->isBranch($node)){
+      $this->variables = $this->variables->createScope(TaintVariableRecord::SCOPE_BRANCH);
+    } else if($this->isLoop($node)){
+      $this->variables = $this->variables->createScope(TaintVariableRecord::SCOPE_LOOP);
     }
   }
 
   public function leaveNode(Node $node) {
-    if($node instanceof Node\FunctionLike){
+    if($node instanceof Node\FunctionLike ||
+       $this->isBranch($node) || $this->isLoop($node)){
       // discard scope
       $scope = $this->variables;
       $this->variables = $scope->discardScope();
@@ -37,13 +42,29 @@ class TaintVisitor extends NodeVisitorAbstract
     // 文の評価
     if($node instanceof Stmt) {
       if($node instanceof Stmt\Global_) {
+        $function = $this->variables->findScope(function($scope){
+          return $scope instanceof FunctionTaintVariableRecord;
+        });
+        assert(isset($function), 'global is placed out of function');
         foreach($node->vars as $var) {
-          $this->variables->addGlobal($this->getVarName($var));
+          $function->addGlobal($this->getVarName($var));
         }
       } else if ($node instanceof Stmt\Return_) { 
-        assert($this->variables instanceof ScopedTaintVariableRecord,
-               'return is placed out of function');
-        $this->variables->addReturn($node->expr->getAttribute('taint'));
+        $function = $this->variables->findScope(function($scope){
+          return $scope instanceof FunctionTaintVariableRecord;
+        });
+        if(isset($function)) {
+          $function->addReturn($node->expr->getAttribute('taint'));
+        }
+      } else if ($node instanceof Stmt\Continue_ ||
+                 $node instanceof Stmt\Break_) {
+        // TODO: ラベル付きの場合, switch 中の break の場合
+        $loop = $this->variables->findScope(function($scope){
+          return $scope instanceof BranchTaintVariableRecord && $scope->isLoop();
+        });
+        if(!is_null($loop)) {
+          $loop->setMask();
+        }
       }
     }
 
@@ -54,9 +75,7 @@ class TaintVisitor extends NodeVisitorAbstract
       if($node instanceof Expr\ArrayDimFetch){
         // 配列アクセス
         $name = $this->getVarName($node);
-        $top_name = explode('$', $name)[0];
-        $tainted = $this->variables->getOrElse($top_name
-                      ,$this->variables->getOrElse($name,TAINT_MAYBE));
+        $tainted = $this->variables->get($name);
       } else if($node instanceof Expr\ArrayItem) {
         $tainted = $node->value->getAttribute('taint');
       } else if($node instanceof Expr\Assign || 
@@ -67,17 +86,22 @@ class TaintVisitor extends NodeVisitorAbstract
         // 変数名が取れる && ? が含まれていない場合 (配列アクセスに変数を用いていない場合)
         if(isset($name) && strpos($name, '?') === FALSE) {
           $tainted = $node->expr->getAttribute('taint');
-          // すでに変数が定義されている場合は汚染を伝播させる
-          // TODO: この場合 $a = $_GET['po']; $a = 1; のような変数の再代入に対応できない。
-          // なお、演算代入の場合はデフォルトが MAYBE 
-          $tainted = max($tainted, $this->variables->getOrElse($name, 
-                  ($node instanceof Expr\AssignOp) ? TAINT_MAYBE : TAINT_CLEAN));
-          $this->variables->set($name, $tainted);
+          if($node instanceof Expr\AssignOp) {
+            // 演算がある場合は持ち上げ
+            $this->variables->lift($name, $tainted);
+          } else {
+            $this->variables->set($name, $tainted);
+          }
         }
       } else if($node instanceof Expr\BinaryOp){
         // 二項演算 : 両方チェック
         $tainted = max($node->left->getAttribute('taint'), 
                        $node->right->getAttribute('taint'));
+        // 右の項は評価されないかもしれない
+        if($node instanceof Expr\BooleanAnd ||
+           $node instanceof Expr\BooleanOr){
+          $node->right->setAttribute('branch', TRUE);
+        }
       } else if($node instanceof Expr\Cast || 
                 $node instanceof Expr\Clone_ ||
                 $node instanceof Expr\ErrorSuppress){
@@ -89,10 +113,18 @@ class TaintVisitor extends NodeVisitorAbstract
         $tainted = $this->analyzeFunctionCall($node);
       } else if($node instanceof Expr\Ternary){
         // 三項演算 : 両方チェック
-        $tainted = max($node->if->getAttribute('taint'), 
-                       $node->else->getAttribute('taint'));
+        if(is_null($node->if)) {
+          // PHP 5.3 以上だと if を省略できる。
+          $tainted = max($node->cond->getAttribute('taint'), 
+                         $node->else->getAttribute('taint'));
+        } else {
+          $tainted = max($node->if->getAttribute('taint'), 
+                         $node->else->getAttribute('taint'));
+          $node->if->setAttribute('branch', TRUE); // if 式は評価されない場合がある
+        }
+        $node->else->setAttribute('branch', TRUE); // else 式は評価されない場合がある
       } else if($node instanceof Expr\Variable){
-        $tainted = $this->variables->getOrElse($node->name, TAINT_MAYBE);
+        $tainted = $this->variables->get($node->name);
       } else if($node instanceof Node\Scalar) {
         // スカラー値
         if($node instanceof Node\Scalar\Encapsed) {
@@ -173,6 +205,33 @@ class TaintVisitor extends NodeVisitorAbstract
       }
     } else if($node->name instanceof Expr) {
       return $node->name->getAttribute('taint');
+    }
+  }
+
+  private function isBranch(Node $node){
+    if($node instanceof Stmt) {
+      return $node instanceof Stmt\Catch_ ||
+             $node instanceof Stmt\Else_ ||
+             $node instanceof Stmt\ElseIf_ ||
+             $node instanceof Stmt\Finally_ ||
+             $node instanceof Stmt\If_ ||
+             $node instanceof Stmt\TryCatch;
+    } else if($node instanceof Expr) {
+      return $node->getAttribute('branch') === TRUE;
+    } else {
+      return FALSE;
+    }
+  }
+
+  private function isLoop(Node $node){
+    if($node instanceof Stmt) {
+      return $node instanceof Stmt\Do_ ||
+             $node instanceof Stmt\For_ ||
+             $node instanceof Stmt\Foreach_ ||
+             $node instanceof Stmt\While_ ||
+             $node instanceof Stmt\Switch_ ; // workaround
+    } else {
+      return FALSE;
     }
   }
 }

@@ -13,6 +13,7 @@ const TAINT_CLEAN = 0;
 
 class TaintVariableRecord
 {
+
   protected $vars = array();
   protected $functions = array();
 
@@ -24,13 +25,18 @@ class TaintVariableRecord
     $this->vars[$name] = $type;
   }
 
-  public function get($name){
-    if(in_array($name, self::TAINTED_SUPER_GLOBALS)) {
+  public function lift($name, $type, $default = TAINT_CLEAN){
+    $this->set($name, max($type, $this->get($name, $default)));
+  }
+
+  public function get($name, $default = TAINT_MAYBE){
+    $top = substr($name, 0, strpos($name, '$'));
+    if(in_array($top, self::TAINTED_SUPER_GLOBALS)) {
       return TAINT_DITRY;
     } else if(isset($this->vars[$name])){
       return $this->vars[$name];
     } else {
-      return NULL;
+      return $default;
     }
   }
 
@@ -42,12 +48,17 @@ class TaintVariableRecord
     $this->functions[$name] = $type;
   }
 
-  public function getOrElse($name, $default){
-    $v = $this->get($name);
-    return isset($v) ? $v : $default;
-  }
+  const SCOPE_FUNCTION = 1;
+  const SCOPE_BRANCH = 2;
+  const SCOPE_LOOP = 3;
 
-  public function createScope(){
-    return new ScopedTaintVariableRecord($this);
+  public function createScope($type){
+    if($type === self::SCOPE_FUNCTION) {
+      return new FunctionTaintVariableRecord($this);
+    } else if($type === self::SCOPE_BRANCH) {
+      return new BranchTaintVariableRecord($this, FALSE);
+    } else if($type === self::SCOPE_LOOP) {
+      return new BranchTaintVariableRecord($this, TRUE);
+    }
   }
 }
