@@ -58,7 +58,7 @@ function checkDirectory($path) {
   }
 }
 
-if(is_file($path) && isPHPFile($file)) {
+if(is_file($path) && isPHPFile($path)) {
   print "===========================" . PHP_EOL;
   print "$path" . PHP_EOL;
   print "---------------------------" . PHP_EOL;
