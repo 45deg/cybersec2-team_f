@@ -53,7 +53,7 @@ class TaintVisitor extends NodeVisitorAbstract
         $function = $this->variables->findScope(function($scope){
           return $scope instanceof FunctionTaintVariableRecord;
         });
-        if(isset($function)) {
+        if(isset($function) && !is_null($node->expr)) {
           $function->addReturn($node->expr->getAttribute('taint'));
         }
       } else if ($node instanceof Stmt\Continue_ ||
