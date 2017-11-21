@@ -59,13 +59,10 @@ function checkDirectory($path) {
 }
 
 if(is_file($path) && isPHPFile($path)) {
-  print "===========================" . PHP_EOL;
-  print "$path" . PHP_EOL;
-  print "---------------------------" . PHP_EOL;
   check($path);
 }
 else if(is_dir($path)) {
   checkDirectory($path);}
 else {
-  die('Unknown input.');
+  die('Not file or directory.');
 }
