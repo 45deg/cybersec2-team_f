@@ -45,16 +45,17 @@ class TaintVisitor extends NodeVisitorAbstract
         $function = $this->variables->findScope(function($scope){
           return $scope instanceof FunctionTaintVariableRecord;
         });
-        assert(isset($function), 'global is placed out of function');
-        foreach($node->vars as $var) {
-          $name = $this->getVarName($var);
-          if(!is_null($name)) $function->addGlobal($name);
+        if(!is_null($function)) {
+          foreach($node->vars as $var) {
+            $name = $this->getVarName($var);
+            if(!is_null($name)) $function->addGlobal($name);
+          }
         }
       } else if ($node instanceof Stmt\Return_) { 
         $function = $this->variables->findScope(function($scope){
           return $scope instanceof FunctionTaintVariableRecord;
         });
-        if(isset($function) && !is_null($node->expr)) {
+        if(!is_null($function) && !is_null($node->expr)) {
           $function->addReturn($node->expr->getAttribute('taint'));
         }
       } else if ($node instanceof Stmt\Continue_ ||
