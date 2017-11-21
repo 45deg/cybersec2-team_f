@@ -11,8 +11,10 @@ class Visitor extends NodeVisitorAbstract
 
   private $positionStore;
 
-  public function __construct(PositionStore $position){
+  public function __construct(PositionStore $position, $noticeSimple=TRUE, $noticeHunk=3){
     $this->positionStore = $position;
+    $this->noticeSimple = $noticeSimple;
+    $this->noticeHunk = $noticeHunk;
   }
   
   public function leaveNode(Node $node) {
@@ -83,21 +85,21 @@ class Visitor extends NodeVisitorAbstract
     print "[{$line}:{$column}]";
     print " ($level_str) $message";
     
-    print "\033[90m\n";
-
-    $hunk = 2;
-    $start = max((int)$line - $hunk, 0);
-    $end = (int)$line + $hunk;
-    $pad = strlen($end + 1);
-    for($no = $start; $no <= $end; $no++) {
-      $raw = $this->positionStore->getLine($no);
-      if(!isset($raw)) break;
-      $no = str_pad($no, $pad, " ", STR_PAD_LEFT);
-      if($no == $line) print "\033[0;32m";
-      print "$no | $raw\n";
-      if($no == $line) print "\033[90m";
+    if(!$this->noticeSimple) {
+      print "\033[90m\n";
+      $hunk = $this->noticeHunk;
+      $start = max((int)$line - $hunk, 0);
+      $end = (int)$line + $hunk;
+      $pad = strlen($end + 1);
+      for($no = $start; $no <= $end; $no++) {
+        $raw = $this->positionStore->getLine($no);
+        if(!isset($raw)) break;
+        $no = str_pad($no, $pad, " ", STR_PAD_LEFT);
+        if($no == $line) print "\033[0;32m";
+        print "$no | $raw\n";
+        if($no == $line) print "\033[90m";
+      }
     }
-    
     print "\033[0m\n";
   }
 
