@@ -37,25 +37,35 @@ try {
 
 }
 
-if(is_file($path)) {
+function isPHPFile($filename) {
+  $ext = substr($filename, strrpos($filename, '.') + 1);
+  return $ext == "php";
+}
+
+function checkDirectory($path) {
+  $files = scandir($path);
+  foreach($files as $file) {
+    $fullpath = "$path/$file";
+    if(is_file($fullpath) && isPHPFile($file)) {
+      print "===========================" . PHP_EOL;
+      print "$fullpath" . PHP_EOL;
+      print "---------------------------" . PHP_EOL;
+      check($fullpath);
+    }
+    else if(is_dir($fullpath) && $file != ".." && $file != ".") {
+      checkDirectory($fullpath);
+    }
+  }
+}
+
+if(is_file($path) && isPHPFile($file)) {
   print "===========================" . PHP_EOL;
   print "$path" . PHP_EOL;
   print "---------------------------" . PHP_EOL;
   check($path);
 }
 else if(is_dir($path)) {
-  $files = scandir($path);
-  foreach($files as $file) {
-    $fullpath = "$path/$file";
-    if(is_file($fullpath)) {
-      print "===========================" . PHP_EOL;
-      print "$fullpath" . PHP_EOL;
-      print "---------------------------" . PHP_EOL;
-      check($fullpath);
-    }
-  }
-  print "===========================" . PHP_EOL;
-}
+  checkDirectory($path);}
 else {
   die('Unknown input.');
 }
