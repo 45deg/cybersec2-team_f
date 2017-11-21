@@ -75,7 +75,7 @@ class Visitor extends NodeVisitorAbstract
     $line = $node->getAttribute('startLine');
     $column = $this->positionStore->getColumn($line, $node->getAttribute('startFilePos'));
     $level_str = (string)$level;
-    if($level == TAINT_DITRY) {
+    if($level == TAINT_DIRTY) {
       $level_str = "DANGER";
       print "\033[1;31m";
     } else if($level == TAINT_MAYBE) {
