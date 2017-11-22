@@ -72,7 +72,7 @@ function checkDirectory($path, $simple, $hunk) {
 }
 
 if(is_file($path) && isPHPFile($path)) {
-  check($path);
+  check($path, $simple, $hunk);
 }
 else if(is_dir($path)) {
   checkDirectory($path, $simple, $hunk);}
