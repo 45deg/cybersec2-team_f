@@ -58,9 +58,10 @@ class Visitor extends NodeVisitorAbstract
   );
 
   private $evalFunc = array(
-    "preg_replace"    => array(1), // 0番目がeのときのみ
+    "preg_replace"    => array(1, 2), // 0番目がeのときのみ
     "create_function" => array(1),
-    "assert"          => array(0)
+    "assert"          => array(0),
+    "unserialize"     => array(0)
   );
 
   private $includeType = array(
@@ -88,7 +89,7 @@ class Visitor extends NodeVisitorAbstract
     if(!$this->noticeSimple) {
       print "\033[90m\n";
       $hunk = $this->noticeHunk;
-      $start = max((int)$line - $hunk, 0);
+      $start = max((int)$line - $hunk, 1);
       $end = (int)$line + $hunk;
       $pad = strlen($end + 1);
       for($no = $start; $no <= $end; $no++) {
